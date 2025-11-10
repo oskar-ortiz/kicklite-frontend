@@ -1,55 +1,55 @@
-import React from 'react';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 interface Category {
   id: string;
   name: string;
   imageUrl: string;
-  viewerCount: number;
+  viewers: number;
 }
 
 interface CategoryGridProps {
   categories?: Category[];
 }
 
-const CategoryGrid: React.FC<CategoryGridProps> = ({ categories = [] }) => {
-  // Placeholder categories if none provided
-  const defaultCategories: Category[] = [
-    {
-      id: '1',
-      name: 'Gaming',
-      imageUrl: '/assets/images/categories/gaming.jpg',
-      viewerCount: 150000
-    },
-    {
-      id: '2',
-      name: 'IRL',
-      imageUrl: '/assets/images/categories/irl.jpg',
-      viewerCount: 75000
-    },
-    // Add more default categories as needed
-  ];
+const defaultCategories: Category[] = [
+  {
+    id: '1',
+    name: 'League of Legends',
+    imageUrl: '/images/categories/lol.jpg',
+    viewers: 250000
+  },
+  {
+    id: '2', 
+    name: 'Just Chatting',
+    imageUrl: '/images/categories/just-chatting.jpg',
+    viewers: 180000
+  }
+];
 
-  const displayCategories = categories.length > 0 ? categories : defaultCategories;
-
+const CategoryGrid = ({ categories = defaultCategories }: CategoryGridProps) => {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-      {displayCategories.map((category) => (
-        <div
-          key={category.id}
-          className="bg-gray-800 rounded-lg overflow-hidden cursor-pointer transition-transform hover:scale-105"
-        >
-          <img
-            src={category.imageUrl}
-            alt={category.name}
-            className="w-full aspect-[4/5] object-cover"
-          />
-          <div className="p-3">
-            <h3 className="font-medium text-white">{category.name}</h3>
-            <p className="text-gray-400 text-sm">
-              {(category.viewerCount / 1000).toFixed(1)}K viewers
-            </p>
-          </div>
-        </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4">
+      {categories.map((category) => (
+        <Link to={`/category/${category.id}`} key={category.id}>
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="relative rounded-lg overflow-hidden shadow-lg bg-slate-800 hover:bg-slate-700 transition-colors"
+          >
+            <div className="aspect-w-16 aspect-h-9">
+              <img
+                src={category.imageUrl}
+                alt={category.name}
+                className="object-cover w-full h-full"
+              />
+            </div>
+            <div className="p-4">
+              <h3 className="font-bold text-lg text-white">{category.name}</h3>
+              <p className="text-gray-400">{category.viewers.toLocaleString()} viewers</p>
+            </div>
+          </motion.div>
+        </Link>
       ))}
     </div>
   );
