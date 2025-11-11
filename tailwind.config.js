@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,13 +7,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#9146FF',
-        secondary: '#772CE8',
-        dark: {
-          900: '#0e0e10',
-          800: '#18181b',
-          700: '#1f1f23',
+        slate: {
+          950: '#020617',
         }
+      },
+      animation: {
+        'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       }
     },
   },
