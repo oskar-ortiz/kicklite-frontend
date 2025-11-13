@@ -73,5 +73,6 @@ class ChatSocketService {
 }
 
 export const chatSocket = new ChatSocketService(
-  process.env.REACT_APP_WS_URL || 'ws://localhost:3000'
+ import.meta.env.VITE_WS_URL || 'ws://localhost:30000'
+
 );
