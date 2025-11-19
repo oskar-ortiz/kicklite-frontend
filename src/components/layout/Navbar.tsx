@@ -16,6 +16,7 @@ import {
   Crown,
   Sparkles
 } from 'lucide-react';
+import Avatar from '../common/Avatar';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -43,11 +44,11 @@ export default function Navbar() {
     { icon: TrendingUp, label: 'Trending', href: '/trending' },
   ];
 
-  // ✅ NOTIFICACIONES SIN IMÁGENES ROTAS
+  // ✅ SIN RUTAS DE IMÁGENES ROTAS - Usando componente Avatar
   const notificationsList = [
-    { id: 1, user: 'TheKing', action: 'está en vivo', time: '2m', emoji: '👑' },
-    { id: 2, user: 'ProGamer', action: 'te mencionó', time: '15m', emoji: '🎮' },
-    { id: 3, user: 'StreamQueen', action: 'te siguió', time: '1h', emoji: '👸' },
+    { id: 1, user: 'TheKing', action: 'está en vivo', time: '2m' },
+    { id: 2, user: 'ProGamer', action: 'te mencionó', time: '15m' },
+    { id: 3, user: 'StreamQueen', action: 'te siguió', time: '1h' },
   ];
 
   return (
@@ -137,10 +138,8 @@ export default function Navbar() {
                           key={notification.id}
                           className="w-full px-4 py-3 flex items-center space-x-3 hover:bg-slate-700 transition-colors"
                         >
-                          {/* ✅ EMOJI EN LUGAR DE IMAGEN ROTA */}
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl flex-shrink-0">
-                            {notification.emoji}
-                          </div>
+                          {/* ✅ USANDO COMPONENTE AVATAR SIN SRC */}
+                          <Avatar size="sm" alt={notification.user} />
                           <div className="flex-1 text-left">
                             <p className="text-sm text-white">
                               <span className="font-semibold">{notification.user}</span>{' '}

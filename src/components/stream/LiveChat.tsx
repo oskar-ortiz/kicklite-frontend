@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Send,
@@ -11,8 +11,6 @@ import {
   Star,
   MoreVertical,
   Pin,
-  Trash2,
-  X
 } from 'lucide-react';
 import Avatar from '../common/Avatar';
 
@@ -20,53 +18,47 @@ interface Message {
   id: number;
   user: string;
   message: string;
-  avatar: string;
   badge?: 'mod' | 'vip' | 'sub' | 'founder';
   color: string;
   timestamp: Date;
   isPinned?: boolean;
 }
 
-const initialMessages: Message[] = [
-  {
-    id: 1,
-    user: 'StreamKing',
-    message: 'Welcome everyone to the stream! 🔥',
-    avatar: '/images/avatars/user1.jpg',
-    badge: 'founder',
-    color: '#a855f7',
-    timestamp: new Date(),
-    isPinned: true
-  },
-  {
-    id: 2,
-    user: 'NightModeGaming',
-    message: 'Amazing stream as always! Keep it up 💪',
-    avatar: '/images/avatars/user2.jpg',
-    badge: 'sub',
-    color: '#06b6d4',
-    timestamp: new Date(Date.now() - 1000 * 60 * 2)
-  },
-  {
-    id: 3,
-    user: 'ModeratorPro',
-    message: 'Remember to follow the chat rules everyone!',
-    avatar: '/images/avatars/user3.jpg',
-    badge: 'mod',
-    color: '#10b981',
-    timestamp: new Date(Date.now() - 1000 * 60 * 5)
-  }
-];
-
 export default function LiveChat() {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 1,
+      user: 'TheKing',
+      message: '¡Bienvenidos al stream! 🔥',
+      badge: 'founder',
+      color: '#a855f7',
+      timestamp: new Date(),
+      isPinned: true
+    },
+    {
+      id: 2,
+      user: 'ModGamer',
+      message: 'Recuerden seguir las reglas del chat',
+      badge: 'mod',
+      color: '#10b981',
+      timestamp: new Date()
+    },
+    {
+      id: 3,
+      user: 'ProPlayer99',
+      message: 'Increíble jugada!',
+      badge: 'sub',
+      color: '#3b82f6',
+      timestamp: new Date()
+    },
+  ]);
+
   const [inputMessage, setInputMessage] = useState('');
   const [showEmojis, setShowEmojis] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [onlineUsers] = useState(1247);
+  const [onlineUsers, setOnlineUsers] = useState(1247);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const emojis = ['😀', '😂', '❤️', '🔥', '👍', '🎮', '⚡', '💎', '👑', '🏆', '🎯', '💪'];
+  const emojis = ['😀', '😂', '❤️', '🔥', '👍', '🎮', '⚡', '💎', '👑', '🏆'];
 
   const badges = {
     founder: { icon: Crown, color: 'text-amber-400', bg: 'bg-amber-500/20' },
@@ -82,17 +74,14 @@ export default function LiveChat() {
   const handleSendMessage = () => {
     if (inputMessage.trim()) {
       const newMessage: Message = {
-        id: Date.now(),
-        user: 'YourUsername',
+        id: messages.length + 1,
+        user: 'TuUsuario',
         message: inputMessage,
-        avatar: '/images/avatars/default.jpg',
         color: '#8b5cf6',
-        timestamp: new Date(),
-        badge: 'sub'
+        timestamp: new Date()
       };
       setMessages([...messages, newMessage]);
       setInputMessage('');
-      setShowEmojis(false);
     }
   };
 
@@ -106,192 +95,171 @@ export default function LiveChat() {
   return (
     <div className="h-[700px] bg-gradient-to-b from-slate-900 to-slate-950 rounded-2xl border border-white/5 flex flex-col overflow-hidden">
       {/* Chat Header */}
-      <div className="p-4 border-b border-white/5 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <Users className="h-5 w-5 text-purple-500" />
-          <span className="text-sm text-white font-medium">
-            {onlineUsers.toLocaleString()} chatting
-          </span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-colors"
-          >
-            <Settings className="h-5 w-5" />
-          </button>
+      <div className="bg-slate-900/50 backdrop-blur-xl border-b border-white/5 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            </div>
+            <h3 className="text-white font-bold text-lg">Chat en Vivo</h3>
+          </div>
+          <div className="flex items-center gap-2">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="px-3 py-1.5 bg-white/5 rounded-lg border border-white/10 flex items-center gap-2"
+            >
+              <Users className="w-4 h-4 text-purple-400" />
+              <span className="text-sm font-semibold text-white">
+                {onlineUsers.toLocaleString()}
+              </span>
+            </motion.div>
+
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+            >
+              <Settings className="w-5 h-5 text-slate-400" />
+            </motion.button>
+          </div>
         </div>
       </div>
 
-      {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Pinned Message */}
+      {/* Messages Container */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-purple-500/50 scrollbar-track-slate-800/50">
         <AnimatePresence>
-          {messages.find(m => m.isPinned) && (
+          {messages.map((msg) => (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="bg-white/5 rounded-lg p-3 border border-white/10"
+              key={msg.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, x: -100 }}
+              className={`group relative ${msg.isPinned ? 'bg-amber-500/10 rounded-lg p-3 border border-amber-500/20' : ''}`}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-2">
-                  <Pin className="h-4 w-4 text-purple-500" />
-                  <span className="text-sm text-slate-400">Pinned message</span>
+              {msg.isPinned && (
+                <div className="flex items-center gap-2 mb-2 text-amber-400 text-xs font-medium">
+                  <Pin className="w-3 h-3" />
+                  <span>Mensaje fijado</span>
                 </div>
-                <button className="text-slate-400 hover:text-white">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              <p className="mt-2 text-sm text-white">
-                {messages.find(m => m.isPinned)?.message}
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              )}
 
-        {/* Message List */}
-        {messages.map((message) => (
-          <div key={message.id} className="flex items-start space-x-3 group">
-            <Avatar src={message.avatar} alt={`${message.user}'s avatar`} size="sm" />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center space-x-2">
-                <span className="font-medium text-sm" style={{ color: message.color }}>
-                  {message.user}
-                </span>
-                {message.badge && (
-                  <span
-                    className={`text-xs px-1.5 py-0.5 rounded-full flex items-center space-x-1 ${
-                      badges[message.badge].bg
-                    }`}
-                  >
-                    {React.createElement(badges[message.badge].icon, {
-                      className: `h-3 w-3 ${badges[message.badge].color}`
-                    })}
-                  </span>
-                )}
-                <span className="text-xs text-slate-500">
-                  {new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(
-                    -Math.round((Date.now() - message.timestamp.getTime()) / 60000),
-                    'minutes'
-                  )}
-                </span>
+              <div className="flex items-start gap-3">
+                {/* ✅ AVATAR SIN SRC - Sin errores */}
+                <Avatar size="sm" alt={msg.user} />
+
+                <div className="flex-1 min-w-0">
+                  {/* User Info */}
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    {msg.badge && (
+                      <div className={`p-1 rounded ${badges[msg.badge].bg}`}>
+                        {(() => {
+                          const BadgeIcon = badges[msg.badge].icon;
+                          return <BadgeIcon className={`w-3 h-3 ${badges[msg.badge].color}`} />;
+                        })()}
+                      </div>
+                    )}
+                    <span
+                      className="font-bold text-sm"
+                      style={{ color: msg.color }}
+                    >
+                      {msg.user}
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      {msg.timestamp.toLocaleTimeString('es-ES', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+
+                  {/* Message */}
+                  <p className="text-sm text-slate-200 break-words leading-relaxed">
+                    {msg.message}
+                  </p>
+                </div>
+
+                {/* Message Actions */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  whileHover={{ opacity: 1 }}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <button className="p-1 hover:bg-white/5 rounded">
+                    <MoreVertical className="w-4 h-4 text-slate-400" />
+                  </button>
+                </motion.div>
               </div>
-              <p className="text-sm text-white break-words">{message.message}</p>
-            </div>
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-              <button className="p-1 hover:bg-white/5 rounded text-slate-400 hover:text-white">
-                <MoreVertical className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        ))}
+            </motion.div>
+          ))}
+        </AnimatePresence>
         <div ref={chatEndRef} />
       </div>
 
-      {/* Chat Input */}
-      <div className="p-4 border-t border-white/5">
-        <div className="flex items-end space-x-2">
-          <div className="relative flex-1">
-            <textarea
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyDown={handleKeyPress}
-              placeholder="Send a message..."
-              className="w-full bg-slate-800/50 text-white rounded-lg pl-4 pr-12 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm h-[45px]"
-              style={{ minHeight: '45px', maxHeight: '120px' }}
-            />
-            <div className="absolute right-2 bottom-2 flex items-center space-x-1">
-              <button
-                onClick={() => setShowEmojis(!showEmojis)}
-                className="p-1 hover:bg-white/5 rounded text-slate-400 hover:text-white"
+      {/* Input Area */}
+      <div className="bg-slate-900/50 backdrop-blur-xl border-t border-white/5 p-4">
+        <div className="relative">
+          {/* Emoji Picker */}
+          <AnimatePresence>
+            {showEmojis && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="absolute bottom-full left-0 mb-2 bg-slate-800/95 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-2xl"
               >
-                <Smile className="h-5 w-5" />
-              </button>
-            </div>
-            {/* Emoji Picker */}
-            <AnimatePresence>
-              {showEmojis && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute bottom-full mb-2 bg-slate-800 rounded-lg shadow-lg p-2 grid grid-cols-6 gap-1"
-                >
-                  {emojis.map((emoji) => (
-                    <button
-                      key={emoji}
-                      onClick={() => {
-                        setInputMessage((prev) => prev + emoji);
-                      }}
-                      className="p-2 hover:bg-white/5 rounded text-xl"
+                <div className="grid grid-cols-5 gap-2">
+                  {emojis.map((emoji, i) => (
+                    <motion.button
+                      key={i}
+                      whileHover={{ scale: 1.2 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setInputMessage(inputMessage + emoji)}
+                      className="w-10 h-10 text-2xl hover:bg-white/10 rounded-lg transition-colors"
                     >
                       {emoji}
-                    </button>
+                    </motion.button>
                   ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="flex items-end gap-2">
+            {/* Emoji Button */}
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setShowEmojis(!showEmojis)}
+              className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all flex-shrink-0"
+            >
+              <Smile className="w-5 h-5 text-slate-400" />
+            </motion.button>
+
+            {/* Input */}
+            <div className="flex-1 relative">
+              <textarea
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Envía un mensaje..."
+                rows={1}
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all resize-none"
+              />
+            </div>
+
+            {/* Send Button */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleSendMessage}
+              disabled={!inputMessage.trim()}
+              className="p-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 shadow-lg shadow-purple-500/30"
+            >
+              <Send className="w-5 h-5 text-white" />
+            </motion.button>
           </div>
-          <button
-            onClick={handleSendMessage}
-            disabled={!inputMessage.trim()}
-            className="p-3 rounded-lg bg-purple-500 hover:bg-purple-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <Send className="h-5 w-5" />
-          </button>
         </div>
       </div>
-
-      {/* Settings Menu */}
-      <AnimatePresence>
-        {showSettings && (
-          <motion.div
-            initial={{ opacity: 0, x: '100%' }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: '100%' }}
-            className="absolute inset-0 bg-slate-900 z-10"
-          >
-            <div className="p-4 border-b border-white/5 flex items-center justify-between">
-              <h3 className="font-medium text-white">Chat Settings</h3>
-              <button
-                onClick={() => setShowSettings(false)}
-                className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="p-4 space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm text-white font-medium">Chat Mode</label>
-                <select className="w-full bg-slate-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                  <option value="all">All Chat</option>
-                  <option value="subscriber">Subscriber Only</option>
-                  <option value="follower">Follower Only</option>
-                  <option value="emote">Emote Only</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm text-white font-medium">Message Delay</label>
-                <input
-                  type="range"
-                  min="0"
-                  max="120"
-                  step="5"
-                  className="w-full"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-white font-medium">Clear Chat History</span>
-                <button className="text-red-400 hover:text-red-300 flex items-center space-x-2">
-                  <Trash2 className="h-4 w-4" />
-                  <span>Clear</span>
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
