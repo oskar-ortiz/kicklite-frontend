@@ -8,7 +8,7 @@ export const API_URL = "https://streamora-backend.onrender.com/api";
 
 // ✅ Configuración automática: desarrollo vs producción
 export const API_BASE_URL = isDevelopment 
-  ? import.meta.env.VITE_API_URL || 'http://localhost:3000'
+  ? import.meta.env.VITE_API_URL || 'https://streamora-backend.onrender.com/api'
   : API_URL;
 
 export const API_ENDPOINTS = {
