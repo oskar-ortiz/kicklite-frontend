@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, 
@@ -17,18 +17,29 @@ import {
   Sparkles
 } from 'lucide-react';
 import Avatar from '../common/Avatar';
+import { useAuth } from '../../context/AuthContext'; // ✅ IMPORTAR useAuth
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
   const [notifications, setNotifications] = useState(false);
+  
+  // ✅ OBTENER USUARIO REAL DEL BACKEND
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // ✅ FUNCIÓN PARA CERRAR SESIÓN
+  const handleSignOut = () => {
+    signOut();
+    navigate('/login');
+  };
 
   const navItems = [
     { icon: Home, label: 'Home', href: '/' },
@@ -162,13 +173,19 @@ export default function Navbar() {
                       exit={{ opacity: 0, y: 10 }}
                       className="absolute right-0 mt-2 w-48 bg-slate-800 rounded-lg shadow-lg py-2 z-50"
                     >
+                      {/* ✅ MOSTRAR USUARIO REAL DEL BACKEND */}
                       <div className="px-4 py-3 border-b border-slate-700">
-                        <p className="text-sm font-semibold text-white">John Doe</p>
-                        <p className="text-xs text-slate-400">@johndoe</p>
+                        <p className="text-sm font-semibold text-white">
+                          {user?.username || 'Usuario'}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          {user?.email || '@usuario'}
+                        </p>
                       </div>
                       <Link 
                         to="/dashboard" 
                         className="block px-4 py-2 text-sm text-white hover:bg-slate-700"
+                        onClick={() => setUserMenu(false)}
                       >
                         <Crown className="inline-block w-4 h-4 mr-2" />
                         Creator Dashboard
@@ -176,11 +193,14 @@ export default function Navbar() {
                       <Link 
                         to="/settings" 
                         className="block px-4 py-2 text-sm text-white hover:bg-slate-700"
+                        onClick={() => setUserMenu(false)}
                       >
                         <Settings className="inline-block w-4 h-4 mr-2" />
                         Settings
                       </Link>
+                      {/* ✅ CERRAR SESIÓN REAL */}
                       <button 
+                        onClick={handleSignOut}
                         className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-slate-700"
                       >
                         <LogOut className="inline-block w-4 h-4 mr-2" />
