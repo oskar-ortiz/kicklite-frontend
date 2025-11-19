@@ -1,5 +1,6 @@
 // src/components/common/Avatar.tsx
 import { User } from 'lucide-react';
+import { useState } from 'react';
 
 interface AvatarProps {
   src?: string;
@@ -16,30 +17,36 @@ const sizeClasses = {
   xl: 'w-24 h-24 text-2xl',
 };
 
+const iconSizes = {
+  xs: 'w-3 h-3',
+  sm: 'w-5 h-5',
+  md: 'w-6 h-6',
+  lg: 'w-8 h-8',
+  xl: 'w-12 h-12',
+};
+
 export default function Avatar({ src, alt, size = 'md', className = '' }: AvatarProps) {
-  // ✅ Si no hay src o la imagen falla, mostrar icono por defecto
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    e.currentTarget.style.display = 'none';
+  const [imageError, setImageError] = useState(false);
+
+  // ✅ Si la imagen falla al cargar, mostrar fallback
+  const handleImageError = () => {
+    setImageError(true);
   };
 
   return (
     <div
       className={`relative rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 overflow-hidden ${sizeClasses[size]} ${className}`}
     >
-      {src ? (
-        <>
-          <img
-            src={src}
-            alt={alt || 'Avatar'}
-            onError={handleImageError}
-            className="w-full h-full object-cover"
-          />
-          {/* Fallback icon si la imagen falla */}
-          <User className="absolute inset-0 m-auto text-white w-1/2 h-1/2" />
-        </>
+      {src && !imageError ? (
+        <img
+          src={src}
+          alt={alt || 'Avatar'}
+          onError={handleImageError}
+          className="w-full h-full object-cover"
+        />
       ) : (
-        // Sin src, mostrar icono directo
-        <User className="text-white w-1/2 h-1/2" />
+        // ✅ Fallback: Icono de usuario si no hay imagen o falla
+        <User className={`text-white ${iconSizes[size]}`} />
       )}
     </div>
   );
