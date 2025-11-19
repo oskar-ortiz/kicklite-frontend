@@ -1,25 +1,5 @@
-import React from 'react';
-
-interface AvatarProps {
-  src: string;
-  alt: string;
-  size?: 'sm' | 'md' | 'lg';
-}
-
-const Avatar: React.FC<AvatarProps> = ({ src, alt, size = 'md' }) => {
-  const sizeClasses = {
-    sm: 'w-8 h-8',
-    md: 'w-12 h-12',
-    lg: 'w-16 h-16'
-  };
-
+export default function Avatar() {
   return (
-    <img
-      src={src}
-      alt={alt}
-      className={`${sizeClasses[size]} rounded-full object-cover`}
-    />
+    <div className="w-8 h-8 rounded-full bg-slate-600" />
   );
-};
-
-export default Avatar;
+}
