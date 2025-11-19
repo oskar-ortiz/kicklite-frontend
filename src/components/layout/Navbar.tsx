@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, 
@@ -16,19 +16,25 @@ import {
   Crown,
   Sparkles
 } from 'lucide-react';
-import Avatar from '../common/Avatat';  
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
   const [notifications, setNotifications] = useState(false);
+  
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleSignOut = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
 
   const navItems = [
     { icon: Home, label: 'Home', href: '/' },
@@ -37,10 +43,11 @@ export default function Navbar() {
     { icon: TrendingUp, label: 'Trending', href: '/trending' },
   ];
 
+  // ✅ NOTIFICACIONES SIN IMÁGENES ROTAS
   const notificationsList = [
-    { id: 1, user: 'TheKing', action: 'is live now', time: '2m', avatar: '/images/avatars/user1.jpg' },
-    { id: 2, user: 'ProGamer', action: 'mentioned you', time: '15m', avatar: '/images/avatars/user2.jpg' },
-    { id: 3, user: 'StreamQueen', action: 'followed you', time: '1h', avatar: '/images/avatars/user3.jpg' },
+    { id: 1, user: 'TheKing', action: 'está en vivo', time: '2m', emoji: '👑' },
+    { id: 2, user: 'ProGamer', action: 'te mencionó', time: '15m', emoji: '🎮' },
+    { id: 3, user: 'StreamQueen', action: 'te siguió', time: '1h', emoji: '👸' },
   ];
 
   return (
@@ -123,23 +130,35 @@ export default function Navbar() {
                       className="absolute right-0 mt-2 w-80 bg-slate-800 rounded-lg shadow-lg py-2 z-50"
                     >
                       <div className="px-4 py-2 border-b border-slate-700">
-                        <h3 className="font-semibold text-white">Notifications</h3>
+                        <h3 className="font-semibold text-white">Notificaciones</h3>
                       </div>
                       {notificationsList.map((notification) => (
                         <button
                           key={notification.id}
-                          className="w-full px-4 py-3 flex items-center space-x-3 hover:bg-slate-700"
+                          className="w-full px-4 py-3 flex items-center space-x-3 hover:bg-slate-700 transition-colors"
                         >
-                          <Avatar src={notification.avatar} alt={`${notification.user}'s avatar`} size="sm" />
+                          {/* ✅ EMOJI EN LUGAR DE IMAGEN ROTA */}
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl flex-shrink-0">
+                            {notification.emoji}
+                          </div>
                           <div className="flex-1 text-left">
                             <p className="text-sm text-white">
                               <span className="font-semibold">{notification.user}</span>{' '}
                               {notification.action}
                             </p>
-                            <p className="text-xs text-slate-400">{notification.time} ago</p>
+                            <p className="text-xs text-slate-400">hace {notification.time}</p>
                           </div>
                         </button>
                       ))}
+                      <div className="px-4 py-2 border-t border-slate-700 text-center">
+                        <Link 
+                          to="/notifications" 
+                          className="text-sm text-purple-400 hover:text-purple-300 font-medium"
+                          onClick={() => setNotifications(false)}
+                        >
+                          Ver todas
+                        </Link>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -163,28 +182,31 @@ export default function Navbar() {
                       className="absolute right-0 mt-2 w-48 bg-slate-800 rounded-lg shadow-lg py-2 z-50"
                     >
                       <div className="px-4 py-3 border-b border-slate-700">
-                        <p className="text-sm font-semibold text-white">John Doe</p>
-                        <p className="text-xs text-slate-400">@johndoe</p>
+                        <p className="text-sm font-semibold text-white">Usuario</p>
+                        <p className="text-xs text-slate-400">@usuario</p>
                       </div>
                       <Link 
                         to="/dashboard" 
                         className="block px-4 py-2 text-sm text-white hover:bg-slate-700"
+                        onClick={() => setUserMenu(false)}
                       >
                         <Crown className="inline-block w-4 h-4 mr-2" />
-                        Creator Dashboard
+                        Dashboard
                       </Link>
                       <Link 
                         to="/settings" 
                         className="block px-4 py-2 text-sm text-white hover:bg-slate-700"
+                        onClick={() => setUserMenu(false)}
                       >
                         <Settings className="inline-block w-4 h-4 mr-2" />
-                        Settings
+                        Configuración
                       </Link>
                       <button 
+                        onClick={handleSignOut}
                         className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-slate-700"
                       >
                         <LogOut className="inline-block w-4 h-4 mr-2" />
-                        Sign out
+                        Cerrar sesión
                       </button>
                     </motion.div>
                   )}
@@ -244,4 +266,4 @@ export default function Navbar() {
       </AnimatePresence>
     </>
   );
-} 
+}
