@@ -22,25 +22,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Verificar token al iniciar - ESTO ES LO QUE FALTABA
+  // ✅ Verificar token al iniciar - CONECTA CON BACKEND REAL
   useEffect(() => {
     const loadUser = async () => {
       const token = localStorage.getItem('token');
       
-      // Si no hay token, terminar loading y no hacer nada más
+      // Si no hay token, NO hay usuario
       if (!token) {
+        console.log('❌ No hay token guardado');
         setLoading(false);
         return;
       }
 
       try {
+        console.log('🔍 Verificando token con el backend...');
         // ✅ LLAMAR AL BACKEND REAL para obtener datos del usuario
         const response = await api.get('/users/profile');
         setUser(response.data);
-        console.log('✅ Usuario cargado:', response.data);
-      } catch (error) {
-        // Si el token es inválido, eliminarlo
-        console.error('❌ Token inválido o expirado');
+        console.log('✅ Usuario cargado desde backend:', response.data);
+      } catch (error: any) {
+        // Si el token es inválido o expiró, eliminarlo
+        console.error('❌ Token inválido o expirado:', error.message);
         localStorage.removeItem('token');
         setUser(null);
       } finally {
@@ -53,6 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('🔐 Intentando login en:', api.defaults.baseURL + '/auth/login');
       const response = await api.post('/auth/login', { email, password });
       const { token, user: userData } = response.data;
 

@@ -17,7 +17,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import Avatar from '../common/Avatar';
-import { useAuth } from '../../context/AuthContext'; // ✅ IMPORTAR useAuth
+import { useAuth } from '../../context/AuthContext';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -176,10 +176,10 @@ export default function Navbar() {
                       {/* ✅ MOSTRAR USUARIO REAL DEL BACKEND */}
                       <div className="px-4 py-3 border-b border-slate-700">
                         <p className="text-sm font-semibold text-white">
-                          {user?.username || 'Usuario'}
+                          {user?.username || 'Cargando...'}
                         </p>
                         <p className="text-xs text-slate-400">
-                          {user?.email || '@usuario'}
+                          {user?.email || '...'}
                         </p>
                       </div>
                       <Link 
