@@ -1,7 +1,56 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Play, TrendingUp, Users, Sparkles, Eye, Radio, Heart, UserPlus, ArrowRight } from 'lucide-react';
+import { getLiveStreams, getCategories, Stream, Category } from '../../services/api/streamService';
 
 export default function Home() {
+  const [liveStreams, setLiveStreams] = useState<Stream[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // ✅ Cargar datos del backend al montar el componente
+  useEffect(() => {
+    const loadData = async () => {
+      console.log('🔄 Cargando datos del backend...');
+      setLoading(true);
+
+      // Cargar streams y categorías en paralelo
+      const [streamsData, categoriesData] = await Promise.all([
+        getLiveStreams(),
+        getCategories(),
+      ]);
+
+      setLiveStreams(streamsData);
+      setCategories(categoriesData);
+      setLoading(false);
+
+      console.log('✅ Datos cargados:', {
+        streams: streamsData.length,
+        categories: categoriesData.length,
+      });
+    };
+
+    loadData();
+  }, []);
+
+  // ✅ Datos fake de respaldo si el backend no responde
+  const fallbackStreams = [
+    { id: '1', title: 'The King', viewerCount: 24532, category: 'Valorant', user: { id: '1', username: 'TheKing', avatarUrl: '👑' }, isLive: true },
+    { id: '2', title: 'ProGamer', viewerCount: 18234, category: 'LOL', user: { id: '2', username: 'ProGamer', avatarUrl: '🎮' }, isLive: true },
+    { id: '3', title: 'StreamQueen', viewerCount: 12456, category: 'Just Chatting', user: { id: '3', username: 'StreamQueen', avatarUrl: '👸' }, isLive: true },
+  ];
+
+  const fallbackCategories = [
+    { id: '1', name: 'Valorant', viewerCount: 245000 },
+    { id: '2', name: 'League of Legends', viewerCount: 189000 },
+    { id: '3', name: 'Minecraft', viewerCount: 134000 },
+    { id: '4', name: 'GTA V', viewerCount: 112000 },
+  ];
+
+  // Usar datos del backend o fallback
+  const displayStreams = liveStreams.length > 0 ? liveStreams : fallbackStreams;
+  const displayCategories = categories.length > 0 ? categories : fallbackCategories;
+
   return (
     <div className="min-h-screen bg-slate-950">
       {/* Hero Section */}
@@ -84,8 +133,10 @@ export default function Home() {
 
               <div className="flex flex-wrap gap-8 mt-12 justify-center lg:justify-start">
                 <div className="text-center lg:text-left">
-                  <div className="text-3xl font-bold text-white">500K+</div>
-                  <div className="text-sm text-slate-400">Streamers Activos</div>
+                  <div className="text-3xl font-bold text-white">
+                    {loading ? '...' : `${displayStreams.length}+`}
+                  </div>
+                  <div className="text-sm text-slate-400">Streams en Vivo</div>
                 </div>
                 <div className="text-center lg:text-left">
                   <div className="text-3xl font-bold text-white">10M+</div>
@@ -98,6 +149,7 @@ export default function Home() {
               </div>
             </motion.div>
 
+            {/* Preview card igual que antes */}
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
@@ -162,7 +214,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Streamers en Vivo */}
+      {/* Streamers en Vivo - CON DATOS REALES */}
       <section className="py-16 bg-slate-950">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
@@ -172,82 +224,90 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { name: 'The King', viewers: 24532, category: 'Valorant', avatar: '👑', color: 'from-purple-600 to-pink-600' },
-              { name: 'ProGamer', viewers: 18234, category: 'LOL', avatar: '🎮', color: 'from-blue-600 to-cyan-600' },
-              { name: 'StreamQueen', viewers: 12456, category: 'Just Chatting', avatar: '👸', color: 'from-pink-600 to-orange-600' },
-            ].map((streamer, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                whileHover={{ y: -8 }}
-                className="group relative cursor-pointer"
-              >
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl opacity-0 group-hover:opacity-75 blur-lg transition-opacity" />
-                
-                <div className="relative bg-slate-900/90 backdrop-blur-xl rounded-2xl overflow-hidden border border-white/10">
-                  <div className="relative aspect-video overflow-hidden">
-                    <div className={`absolute inset-0 bg-gradient-to-br ${streamer.color}`} />
-                    <div className="absolute inset-0 bg-black/40" />
-                    
-                    <div className="absolute top-3 left-3 px-3 py-1.5 bg-red-500 rounded-lg flex items-center gap-2">
-                      <Radio className="w-3 h-3 text-white animate-pulse" />
-                      <span className="font-bold text-white text-xs">EN VIVO</span>
+          {loading ? (
+            <div className="text-center text-slate-400 py-12">
+              Cargando streams...
+            </div>
+          ) : displayStreams.length === 0 ? (
+            <div className="text-center text-slate-400 py-12">
+              No hay streams en vivo en este momento
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {displayStreams.slice(0, 6).map((stream, i) => (
+                <motion.div
+                  key={stream.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  whileHover={{ y: -8 }}
+                  className="group relative cursor-pointer"
+                >
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl opacity-0 group-hover:opacity-75 blur-lg transition-opacity" />
+                  
+                  <div className="relative bg-slate-900/90 backdrop-blur-xl rounded-2xl overflow-hidden border border-white/10">
+                    <div className="relative aspect-video overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600" />
+                      <div className="absolute inset-0 bg-black/40" />
+                      
+                      {stream.isLive && (
+                        <div className="absolute top-3 left-3 px-3 py-1.5 bg-red-500 rounded-lg flex items-center gap-2">
+                          <Radio className="w-3 h-3 text-white animate-pulse" />
+                          <span className="font-bold text-white text-xs">EN VIVO</span>
+                        </div>
+                      )}
+
+                      <div className="absolute top-3 right-3 px-3 py-1.5 bg-black/50 backdrop-blur-md rounded-lg flex items-center gap-2">
+                        <Eye className="w-3 h-3 text-white" />
+                        <span className="font-semibold text-white text-xs">
+                          {stream.viewerCount.toLocaleString()}
+                        </span>
+                      </div>
+
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center">
+                          <Play className="w-8 h-8 text-white ml-1" />
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="absolute top-3 right-3 px-3 py-1.5 bg-black/50 backdrop-blur-md rounded-lg flex items-center gap-2">
-                      <Eye className="w-3 h-3 text-white" />
-                      <span className="font-semibold text-white text-xs">
-                        {streamer.viewers.toLocaleString()}
+                    <div className="p-4">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl">
+                          {stream.user.avatarUrl || '🎮'}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-white font-bold text-sm mb-1">{stream.user.username}</h3>
+                          <p className="text-slate-400 text-xs">@{stream.user.username.toLowerCase()}</p>
+                        </div>
+                      </div>
+
+                      <p className="text-white text-sm mb-2">{stream.title || 'Sin título'}</p>
+                      <span className="px-2.5 py-1 bg-purple-500/20 text-purple-300 rounded-lg text-xs font-medium">
+                        {stream.category}
                       </span>
-                    </div>
 
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center">
-                        <Play className="w-8 h-8 text-white ml-1" />
+                      <div className="flex gap-2 mt-4">
+                        <button className="flex-1 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg font-semibold text-white text-sm">
+                          Ver Stream
+                        </button>
+                        <button className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg">
+                          <Heart className="w-5 h-5 text-slate-300" />
+                        </button>
+                        <button className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg">
+                          <UserPlus className="w-5 h-5 text-slate-300" />
+                        </button>
                       </div>
                     </div>
                   </div>
-
-                  <div className="p-4">
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl">
-                        {streamer.avatar}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-white font-bold text-sm mb-1">{streamer.name}</h3>
-                        <p className="text-slate-400 text-xs">@{streamer.name.toLowerCase().replace(' ', '')}</p>
-                      </div>
-                    </div>
-
-                    <p className="text-white text-sm mb-2">RANKED GRIND | !discord !prime</p>
-                    <span className="px-2.5 py-1 bg-purple-500/20 text-purple-300 rounded-lg text-xs font-medium">
-                      {streamer.category}
-                    </span>
-
-                    <div className="flex gap-2 mt-4">
-                      <button className="flex-1 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg font-semibold text-white text-sm">
-                        Ver Stream
-                      </button>
-                      <button className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg">
-                        <Heart className="w-5 h-5 text-slate-300" />
-                      </button>
-                      <button className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg">
-                        <UserPlus className="w-5 h-5 text-slate-300" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Categorías */}
+      {/* Categorías - CON DATOS REALES */}
       <section className="py-16 bg-slate-950">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
@@ -258,59 +318,51 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { name: 'Valorant', viewers: 245000, icon: '🎯', gradient: 'from-red-500 to-purple-500', tag: 'HOT' },
-              { name: 'League of Legends', viewers: 189000, icon: '⚔️', gradient: 'from-blue-500 to-cyan-500', tag: 'TRENDING' },
-              { name: 'Minecraft', viewers: 134000, icon: '🟫', gradient: 'from-green-500 to-emerald-500', tag: null },
-              { name: 'GTA V', viewers: 112000, icon: '🚗', gradient: 'from-orange-500 to-pink-500', tag: 'NEW' },
-            ].map((cat, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.1 }}
-                whileHover={{ y: -10 }}
-                className="group relative cursor-pointer"
-              >
-                <div className={`absolute -inset-1 bg-gradient-to-r ${cat.gradient} opacity-0 group-hover:opacity-75 blur-xl transition-all rounded-2xl`} />
-                
-                <div className="relative bg-slate-900/90 backdrop-blur-xl rounded-2xl overflow-hidden border border-white/5">
-                  <div className="relative aspect-[4/5]">
-                    <div className={`absolute inset-0 bg-gradient-to-br ${cat.gradient} opacity-80`} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/50 to-transparent" />
-                    
-                    {cat.tag && (
-                      <div className="absolute top-3 right-3">
-                        <div className={`px-3 py-1.5 bg-gradient-to-r ${cat.gradient} rounded-lg`}>
-                          <span className="text-xs font-bold text-white">{cat.tag}</span>
+            {displayCategories.slice(0, 4).map((cat, i) => {
+              const gradients = ['from-red-500 to-purple-500', 'from-blue-500 to-cyan-500', 'from-green-500 to-emerald-500', 'from-orange-500 to-pink-500'];
+              const icons = ['🎯', '⚔️', '🟫', '🚗'];
+              
+              return (
+                <motion.div
+                  key={cat.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.1 }}
+                  whileHover={{ y: -10 }}
+                  className="group relative cursor-pointer"
+                >
+                  <div className={`absolute -inset-1 bg-gradient-to-r ${gradients[i]} opacity-0 group-hover:opacity-75 blur-xl transition-all rounded-2xl`} />
+                  
+                  <div className="relative bg-slate-900/90 backdrop-blur-xl rounded-2xl overflow-hidden border border-white/5">
+                    <div className="relative aspect-[4/5]">
+                      <div className={`absolute inset-0 bg-gradient-to-br ${gradients[i]} opacity-80`} />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/50 to-transparent" />
+
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-8xl opacity-90">{icons[i]}</div>
+                      </div>
+
+                      <div className="absolute bottom-4 left-4 flex gap-2">
+                        <div className="px-3 py-1.5 bg-black/50 backdrop-blur-md rounded-lg flex items-center gap-2">
+                          <Eye className="w-4 h-4 text-white" />
+                          <span className="text-sm font-bold text-white">
+                            {(cat.viewerCount / 1000).toFixed(0)}K
+                          </span>
                         </div>
                       </div>
-                    )}
-
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-8xl opacity-90">{cat.icon}</div>
                     </div>
 
-                    <div className="absolute bottom-4 left-4 flex gap-2">
-                      <div className="px-3 py-1.5 bg-black/50 backdrop-blur-md rounded-lg flex items-center gap-2">
-                        <Eye className="w-4 h-4 text-white" />
-                        <span className="text-sm font-bold text-white">
-                          {(cat.viewers / 1000).toFixed(0)}K
-                        </span>
+                    <div className="p-4">
+                      <h3 className="text-white font-bold text-lg mb-2">{cat.name}</h3>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400 text-sm">{cat.viewerCount.toLocaleString()} espectadores</span>
+                        <ArrowRight className="w-4 h-4 text-purple-400" />
                       </div>
                     </div>
                   </div>
-
-                  <div className="p-4">
-                    <h3 className="text-white font-bold text-lg mb-2">{cat.name}</h3>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-400 text-sm">{cat.viewers.toLocaleString()} espectadores</span>
-                      <ArrowRight className="w-4 h-4 text-purple-400" />
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
