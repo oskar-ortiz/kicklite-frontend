@@ -3,12 +3,12 @@ import axios from 'axios';
 
 const isDevelopment = import.meta.env.MODE === 'development';
 
-// ✅ URL del backend de tu compañero en Render
-export const API_URL = "https://streamora-backend.onrender.com";
+// ✅ URL del backend de tu compañero en Render (CON /api)
+export const API_URL = "https://streamora-backend.onrender.com/api";
 
 // ✅ Configuración automática: desarrollo vs producción
 export const API_BASE_URL = isDevelopment 
-  ? import.meta.env.VITE_API_URL || 'https://streamora-backend.onrender.com'
+  ? import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
   : API_URL;
 
 export const API_ENDPOINTS = {
