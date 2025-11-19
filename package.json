@@ -1,7 +1,8 @@
 {
-  "name": "kicklite-frontend-ts",
+  "name": "streamora-space-frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "streamora.space - Plataforma de Streaming en Vivo",
   "type": "module",
   "scripts": {
     "dev": "vite",

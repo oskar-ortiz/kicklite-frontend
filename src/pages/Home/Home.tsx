@@ -43,15 +43,16 @@ export default function Home() {
               >
                 <Sparkles className="w-4 h-4 text-purple-400" />
                 <span className="text-sm font-medium text-purple-300">
-                  #1 Platform para Streamers
+                  #1 Plataforma para Streamers
                 </span>
               </motion.div>
 
               <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-                <span className="text-white">Stream.</span>
+                <span className="text-white">streamora</span>
+                <span className="text-white/40">.space</span>
                 <br />
                 <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
-                  Crea. Conecta.
+                  Stream. Crea. Conecta.
                 </span>
               </h1>
 

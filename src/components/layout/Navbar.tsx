@@ -66,7 +66,10 @@ export default function Navbar() {
               </button>
               <Link to="/" className="flex items-center space-x-2">
                 <Sparkles className="h-6 w-6 text-purple-500" />
-                <span className="text-xl font-bold text-white">KickLite</span>
+                <span className="text-xl font-bold text-white">streamora</span>
+                <span className="px-2 py-0.5 text-[10px] font-bold bg-white/10 text-white/60 rounded border border-white/20">
+                  space
+                </span>
               </Link>
             </div>
 
