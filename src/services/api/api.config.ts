@@ -3,47 +3,46 @@ import axios from 'axios';
 
 const isDevelopment = import.meta.env.MODE === 'development';
 
-// ✅ URL del backend de tu compañero en Render (CON /api)
-export const API_URL = "https://streamora-backend.onrender.com/api";
+// ✅ URL del backend en Render (sin /api)
+export const API_URL = "https://streamora-backend.onrender.com";
 
-// ✅ Configuración automática: desarrollo vs producción
-export const API_BASE_URL = isDevelopment 
-  ? import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
-  : API_URL;
+// ✅ SIEMPRE usa el backend de Render
+export const API_BASE_URL = API_URL;
 
 export const API_ENDPOINTS = {
   auth: {
-    login: `${API_BASE_URL}/auth/login`,
-    register: `${API_BASE_URL}/auth/register`,
-    logout: `${API_BASE_URL}/auth/logout`,
-    refresh: `${API_BASE_URL}/auth/refresh`,
+    login: `/api/auth/login`,
+    register: `/api/auth/register`,
+    logout: `/api/auth/logout`,
+    refresh: `/api/auth/refresh`,
+    me: `/api/auth/me`,
   },
   users: {
-    profile: `${API_BASE_URL}/users/profile`,
-    update: `${API_BASE_URL}/users/update`,
-    follow: (userId: string) => `${API_BASE_URL}/users/${userId}/follow`,
-    unfollow: (userId: string) => `${API_BASE_URL}/users/${userId}/unfollow`,
+    profile: `/api/users/profile`,
+    update: `/api/users/update`,
+    follow: (userId: string) => `/api/users/${userId}/follow`,
+    unfollow: (userId: string) => `/api/users/${userId}/unfollow`,
   },
   streams: {
-    live: `${API_BASE_URL}/streams/live`,
-    byId: (streamId: string) => `${API_BASE_URL}/streams/${streamId}`,
-    start: `${API_BASE_URL}/streams/start`,
-    end: `${API_BASE_URL}/streams/end`,
+    live: `/api/streams/live`,
+    byId: (streamId: string) => `/api/streams/${streamId}`,
+    start: `/api/streams/start`,
+    end: `/api/streams/end`,
   },
   categories: {
-    all: `${API_BASE_URL}/categories`,
-    byId: (categoryId: string) => `${API_BASE_URL}/categories/${categoryId}`,
+    all: `/api/categories`,
+    byId: (categoryId: string) => `/api/categories/${categoryId}`,
   },
   chat: {
-    messages: (streamId: string) => `${API_BASE_URL}/chat/${streamId}/messages`,
-    send: (streamId: string) => `${API_BASE_URL}/chat/${streamId}/send`,
+    messages: (streamId: string) => `/api/chat/${streamId}/messages`,
+    send: (streamId: string) => `/api/chat/${streamId}/send`,
   },
-  health: `${API_BASE_URL}/health`,
+  health: `/api/health`,
 };
 
 export const axiosConfig = {
   baseURL: API_BASE_URL,
-  timeout: 30000, // 30 segundos para Render (puede tardar en despertar)
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -57,14 +56,14 @@ export const api = axios.create(axiosConfig);
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    if (token) {
+    if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Log en desarrollo
-    if (isDevelopment) {
-      console.log('📤 Request:', config.method?.toUpperCase(), config.url);
-    }
+    // ✅ Log corregido con validación de undefined
+    const url = config.url || '';
+    const baseURL = config.baseURL || API_BASE_URL;
+    console.log('📤 Request:', config.method?.toUpperCase(), `${baseURL}${url}`);
     
     return config;
   },
@@ -77,76 +76,52 @@ api.interceptors.request.use(
 // ✅ Interceptor para manejar errores
 api.interceptors.response.use(
   (response) => {
-    // Log en desarrollo
-    if (isDevelopment) {
-      console.log('✅ Response:', response.status, response.config.url);
-    }
+    console.log('✅ Response:', response.status, response.config.url);
     return response;
   },
   (error) => {
-    // Log detallado de errores
     console.error('❌ Response Error:', {
       status: error.response?.status,
       message: error.response?.data?.message || error.message,
       url: error.config?.url,
     });
 
-    // Manejo de errores específicos
     if (error.response?.status === 401) {
       console.warn('🔒 Sesión expirada');
       localStorage.removeItem('token');
-      window.location.href = '/login';
     }
 
-    if (error.response?.status === 403) {
-      console.error('🚫 Sin permisos');
-    }
-
-    if (error.response?.status === 404) {
-      console.error('🔍 Recurso no encontrado');
-    }
-
-    if (error.response?.status >= 500) {
-      console.error('⚠️ Error del servidor');
-    }
-
-    // Error de red (backend no responde)
     if (!error.response) {
-      console.error('🌐 Error de red - Verifica:');
-      console.error('   1. Backend corriendo en:', API_BASE_URL);
-      console.error('   2. CORS configurado correctamente');
-      console.error('   3. Tu conexión a internet');
+      console.error('🌐 Error de red - Backend no responde');
+      console.error('   URL:', API_BASE_URL);
     }
 
     return Promise.reject(error);
   }
 );
 
-// ✅ Health check - Verificar conexión con backend
+// ✅ Health check
 export const checkBackendHealth = async () => {
   try {
-    console.log('🔍 Verificando conexión con backend...');
-    const response = await api.get('/health');
+    console.log('🔍 Verificando backend:', `${API_BASE_URL}/api/health`);
+    const response = await api.get('/api/health');
     console.log('✅ Backend conectado:', response.data);
     return { success: true, data: response.data };
   } catch (error: any) {
-    console.error('❌ Backend no disponible:', API_BASE_URL);
+    console.error('❌ Backend no disponible');
+    console.error('   URL intentada:', `${API_BASE_URL}/api/health`);
+    console.error('   Error:', error.message);
     return { success: false, error: error.message };
   }
 };
 
-// ✅ Log de configuración
-console.log('🔧 API Config:', {
-  mode: import.meta.env.MODE,
-  apiUrl: API_BASE_URL,
-  isDevelopment,
-  backendUrl: API_URL,
-});
-
-// ✅ Test de conexión automático en desarrollo
-if (isDevelopment) {
-  console.log('🚀 Testing backend connection...');
-  checkBackendHealth();
-}
+// ✅ Log de configuración inicial
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+console.log('🔧 API Configuration');
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+console.log('Mode:', import.meta.env.MODE);
+console.log('Backend URL:', API_BASE_URL);
+console.log('Environment:', isDevelopment ? 'Development' : 'Production');
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
 export default api;
