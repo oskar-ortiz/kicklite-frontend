@@ -14,9 +14,11 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import LivePage from "./pages/Live/Live";
 import TrendingPage from "./pages/Trending/Trending";
 
-// 🔥 RUTAS DE AUTENTICACIÓN (AGREGADO)
+// 🔥 RUTAS DE AUTENTICACIÓN
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
+import ForgotPassword from "./pages/Auth/ForgotPassword";
+import ResetPassword from "./pages/Auth/ResetPassword";
 
 export default function App() {
   return (
@@ -41,6 +43,10 @@ export default function App() {
         {/* 🔥 LOGIN & REGISTER */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
+        {/* 🔥 NUEVAS RUTAS DE RECUPERACIÓN */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* RUTA DESCONOCIDA */}
         <Route path="*" element={<Home />} />

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
 
@@ -8,7 +8,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
@@ -97,12 +97,19 @@ export default function Login() {
             </button>
           </form>
 
-          {/* Link a Register */}
-          <p className="mt-6 text-center text-slate-400 text-sm">
+          {/* 🔥 NUEVO BLOQUE DE LINKS (RECUPERACIÓN + REGISTER) */}
+          <p className="text-center text-sm text-slate-400 mt-6">
+            <Link
+              to="/forgot-password"
+              className="text-purple-400 hover:text-purple-300 mr-4"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+
             ¿No tienes cuenta?{' '}
-            <a href="/register" className="text-purple-400 hover:text-purple-300 font-medium">
+            <Link to="/register" className="text-purple-400 hover:text-purple-300">
               Regístrate
-            </a>
+            </Link>
           </p>
         </div>
 

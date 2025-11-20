@@ -7,9 +7,11 @@ export const API_ENDPOINTS = {
   auth: {
     login: `/api/auth/login`,
     register: `/api/auth/register`,
-    logout: `/api/auth/logout`,
-    refresh: `/api/auth/refresh`,
     me: `/api/auth/me`,
+
+    verifyEmail: `/api/auth/verify-email`,
+    forgotPassword: `/api/auth/forgot-password`,
+    resetPassword: `/api/auth/reset-password`,
   },
 
   users: {
@@ -21,9 +23,9 @@ export const API_ENDPOINTS = {
 
   streams: {
     live: `/api/streams/live`,
-    byId: (streamId: string) => `/api/streams/${streamId}`, // ⚠ confirmar con tu backend
+    byId: (streamId: string) => `/api/streams/${streamId}`,
     start: `/api/streams/start`,
-    end: `/api/streams/stop`, // ✔ correcto
+    end: `/api/streams/stop`,
   },
 
   categories: {
