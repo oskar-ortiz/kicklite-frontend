@@ -9,6 +9,19 @@ interface StreamCardProps {
 }
 
 const StreamCard: React.FC<StreamCardProps> = ({ stream, onClick }) => {
+  // ============================
+  // 🔒 Manejo seguro de datos
+  // ============================
+  const thumbnail = stream?.thumbnailUrl || 'https://via.placeholder.com/640x360?text=Stream';
+  const title = stream?.title || 'Untitled stream';
+  const category = stream?.category || 'Uncategorized';
+
+  const streamerUsername = stream?.streamer?.username || 'Unknown user';
+  const avatar = stream?.streamer?.avatarUrl || 'https://via.placeholder.com/40x40?text=Avatar';
+
+  const viewerCount = formatViewerCount(stream?.viewerCount);
+  const isLive = Boolean(stream?.isLive);
+
   return (
     <motion.div
       whileHover={{ scale: 1.05, y: -5 }}
@@ -16,16 +29,22 @@ const StreamCard: React.FC<StreamCardProps> = ({ stream, onClick }) => {
       className="bg-slate-800 rounded-lg overflow-hidden cursor-pointer transition-all hover:shadow-xl"
       onClick={onClick}
     >
+      {/* ============================
+          🖼 Thumbnail
+      ============================ */}
       <div className="relative overflow-hidden">
         <img
-          src={stream.thumbnailUrl}
-          alt={stream.title}
+          src={thumbnail}
+          alt={title}
           className="w-full aspect-video object-cover transition-transform duration-300 hover:scale-110"
           onError={(e) => {
-            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/640x360?text=Stream';
+            (e.target as HTMLImageElement).src =
+              'https://via.placeholder.com/640x360?text=Stream';
           }}
         />
-        {stream.isLive && (
+
+        {/* LIVE badge animado */}
+        {isLive && (
           <motion.span 
             animate={{ opacity: [0.8, 1, 0.8] }}
             transition={{ duration: 1.5, repeat: Infinity }}
@@ -34,24 +53,38 @@ const StreamCard: React.FC<StreamCardProps> = ({ stream, onClick }) => {
             LIVE
           </motion.span>
         )}
+
+        {/* Viewers */}
         <span className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 text-xs rounded">
-          {formatViewerCount(stream.viewerCount)} viewers
+          {viewerCount} viewers
         </span>
       </div>
+
+      {/* ============================
+          👤 Información del streamer
+      ============================ */}
       <div className="p-4">
         <div className="flex items-start gap-3">
           <img
-            src={stream.streamer.avatarUrl}
-            alt={stream.streamer.username}
+            src={avatar}
+            alt={streamerUsername}
             className="w-10 h-10 rounded-full flex-shrink-0 border border-purple-500"
             onError={(e) => {
-              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/40x40?text=Avatar';
+              (e.target as HTMLImageElement).src =
+                'https://via.placeholder.com/40x40?text=Avatar';
             }}
           />
+
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-white line-clamp-2 text-sm">{stream.title}</h3>
-            <p className="text-gray-400 text-xs truncate">{stream.streamer.username}</p>
-            <p className="text-gray-500 text-xs truncate">{stream.category}</p>
+            <h3 className="font-medium text-white line-clamp-2 text-sm">
+              {title}
+            </h3>
+            <p className="text-gray-400 text-xs truncate">
+              {streamerUsername}
+            </p>
+            <p className="text-gray-500 text-xs truncate">
+              {category}
+            </p>
           </div>
         </div>
       </div>
