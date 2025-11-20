@@ -9,18 +9,33 @@ interface StreamCardProps {
 }
 
 const StreamCard: React.FC<StreamCardProps> = ({ stream, onClick }) => {
-  // ============================
-  // 🔒 Manejo seguro de datos
-  // ============================
-  const thumbnail = stream?.thumbnailUrl || 'https://via.placeholder.com/640x360?text=Stream';
-  const title = stream?.title || 'Untitled stream';
-  const category = stream?.category || 'Uncategorized';
+  // ✅ Validación temprana
+  if (!stream) {
+    console.warn("⚠️ StreamCard recibió un stream undefined");
+    return null;
+  }
 
-  const streamerUsername = stream?.streamer?.username || 'Unknown user';
-  const avatar = stream?.streamer?.avatarUrl || 'https://via.placeholder.com/40x40?text=Avatar';
-
-  const viewerCount = formatViewerCount(stream?.viewerCount);
-  const isLive = Boolean(stream?.isLive);
+  // ============================
+  // 🛡 Datos protegidos con valores por defecto
+  // ============================
+  const thumbnail =
+    stream.thumbnailUrl ||
+    'https://via.placeholder.com/640x360?text=Stream';
+  
+  const title = stream.title || 'Untitled stream';
+  const category = stream.category || 'Uncategorized';
+  
+  const streamerUsername =
+    stream.streamer?.username || 'Unknown user';
+  
+  const avatar =
+    stream.streamer?.avatarUrl ||
+    'https://via.placeholder.com/40x40?text=Avatar';
+  
+  // ✅ Usar formatViewerCount que ya maneja undefined
+  const viewerCount = formatViewerCount(stream.viewerCount);
+  
+  const isLive = Boolean(stream.isLive);
 
   return (
     <motion.div
@@ -38,14 +53,14 @@ const StreamCard: React.FC<StreamCardProps> = ({ stream, onClick }) => {
           alt={title}
           className="w-full aspect-video object-cover transition-transform duration-300 hover:scale-110"
           onError={(e) => {
-            (e.target as HTMLImageElement).src =
-              'https://via.placeholder.com/640x360?text=Stream';
+            const target = e.target as HTMLImageElement;
+            target.src = 'https://via.placeholder.com/640x360?text=Stream';
           }}
         />
-
-        {/* LIVE badge animado */}
+        
+        {/* 🔴 LIVE badge */}
         {isLive && (
-          <motion.span 
+          <motion.span
             animate={{ opacity: [0.8, 1, 0.8] }}
             transition={{ duration: 1.5, repeat: Infinity }}
             className="absolute top-2 left-2 bg-red-600 text-white px-2 py-1 text-xs rounded font-bold"
@@ -53,15 +68,15 @@ const StreamCard: React.FC<StreamCardProps> = ({ stream, onClick }) => {
             LIVE
           </motion.span>
         )}
-
-        {/* Viewers */}
+        
+        {/* 👁 Viewers */}
         <span className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 text-xs rounded">
           {viewerCount} viewers
         </span>
       </div>
 
       {/* ============================
-          👤 Información del streamer
+          👤 Streamer info
       ============================ */}
       <div className="p-4">
         <div className="flex items-start gap-3">
@@ -70,11 +85,11 @@ const StreamCard: React.FC<StreamCardProps> = ({ stream, onClick }) => {
             alt={streamerUsername}
             className="w-10 h-10 rounded-full flex-shrink-0 border border-purple-500"
             onError={(e) => {
-              (e.target as HTMLImageElement).src =
-                'https://via.placeholder.com/40x40?text=Avatar';
+              const target = e.target as HTMLImageElement;
+              target.src = 'https://via.placeholder.com/40x40?text=Avatar';
             }}
           />
-
+          
           <div className="flex-1 min-w-0">
             <h3 className="font-medium text-white line-clamp-2 text-sm">
               {title}
