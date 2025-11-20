@@ -1,84 +1,106 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { api } from "../../services/api/api.config";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import api, { API_ENDPOINTS } from "../../services/api/api.config";
 
 export default function ResetPassword() {
-  const [params] = useSearchParams();
-  const token = params.get("token");
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  const navigate = useNavigate();
+
+  // Si no hay token en la URL
+  if (!token) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <p className="text-red-500 text-xl">Token inválido o faltante.</p>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setMsg("");
 
     if (password !== confirm) {
-      setMessage("Las contraseñas no coinciden.");
+      setMsg("Las contraseñas no coinciden.");
       return;
     }
 
-    try {
-      setLoading(true);
+    setLoading(true);
 
-      const res = await api.post("/api/auth/reset-password", {
+    try {
+      console.log("🔁 Enviando nueva contraseña…");
+
+      await api.post(API_ENDPOINTS.auth.resetPassword, {
         token,
-        password,
+        newPassword: password,
       });
 
-      setMessage(res.data.message || "Contraseña restablecida.");
-    } catch (err: any) {
-      setMessage(err.response?.data?.message || "Error al restablecer.");
+      setMsg("Contraseña actualizada correctamente. Redirigiendo…");
+
+      setTimeout(() => navigate("/login"), 2000);
+
+    } catch (err) {
+      console.error("❌ Error reset-password:", err);
+      setMsg("Token inválido o expirado.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-slate-900 p-8 rounded-xl border border-white/10 w-full max-w-md"
-      >
-        <h1 className="text-white text-2xl font-bold mb-4">Restablecer contraseña</h1>
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
+      <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8 shadow-2xl border border-white/5">
 
-        {!token ? (
-          <p className="text-red-500 text-center">Token inválido o expirado.</p>
-        ) : (
-          <>
+        <h1 className="text-2xl font-bold text-white mb-2">Nueva contraseña</h1>
+        <p className="text-slate-400 text-sm mb-6">
+          Introduce tu nueva contraseña.
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          
+          <div>
+            <label className="block text-sm text-slate-300 mb-1">Nueva contraseña</label>
             <input
               type="password"
-              placeholder="Nueva contraseña"
-              className="w-full p-3 bg-slate-800 rounded-lg text-white border border-white/10 mb-4"
+              required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
+              className="w-full bg-slate-800 text-white rounded-lg px-3 py-2 border border-white/10 focus:ring-2 focus:ring-purple-500 outline-none"
             />
+          </div>
 
+          <div>
+            <label className="block text-sm text-slate-300 mb-1">Repetir contraseña</label>
             <input
               type="password"
-              placeholder="Confirmar contraseña"
-              className="w-full p-3 bg-slate-800 rounded-lg text-white border border-white/10 mb-4"
+              required
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              required
+              className="w-full bg-slate-800 text-white rounded-lg px-3 py-2 border border-white/10 focus:ring-2 focus:ring-purple-500 outline-none"
             />
+          </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full p-3 bg-purple-600 text-white rounded-lg disabled:opacity-50"
-            >
-              {loading ? "Procesando..." : "Restablecer"}
-            </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold disabled:opacity-50"
+          >
+            {loading ? "Guardando..." : "Cambiar contraseña"}
+          </button>
 
-            {message && (
-              <p className="text-purple-400 text-sm text-center mt-4">{message}</p>
-            )}
-          </>
+        </form>
+
+        {msg && (
+          <p className="text-purple-400 text-sm text-center mt-4">{msg}</p>
         )}
-      </form>
+
+      </div>
     </div>
   );
 }
