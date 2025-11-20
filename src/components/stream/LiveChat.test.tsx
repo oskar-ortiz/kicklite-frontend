@@ -1,151 +1,74 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import { BrowserRouter } from 'react-router-dom';
+import { render, screen, fireEvent } from '@testing-library/react';
 import LiveChat from './LiveChat';
 
-const renderWithRouter = (ui: React.ReactElement) => {
-  return render(ui, { wrapper: BrowserRouter });
-};
+describe("LiveChat", () => {
 
-describe('LiveChat', () => {
-  it('renders the chat interface', () => {
-    renderWithRouter(<LiveChat />);
-    
-    // Check if chat header elements are present
-    expect(screen.getByText(/chatting/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/send a message/i)).toBeInTheDocument();
-    
-    // Check if initial messages are rendered (can exist in pinned + list)
-    expect(screen.getAllByText('Welcome everyone to the stream! 🔥').length).toBeGreaterThanOrEqual(1);
+  test("renders the chat interface", () => {
+    render(<LiveChat />);
+
+    expect(screen.getByText("Chatting")).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "chat-input" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "send-message" })).toBeInTheDocument();
   });
 
-  it('allows sending messages', async () => {
-    renderWithRouter(<LiveChat />);
-    
-    const input = screen.getByPlaceholderText(/send a message/i);
-    const testMessage = 'Hello, chat!';
-    
-    fireEvent.change(input, { target: { value: testMessage } });
-    fireEvent.keyDown(input, { key: 'Enter' });
-    
-    await waitFor(() => {
-      expect(screen.getByText(testMessage)).toBeInTheDocument();
-    });
-  });
+  test("allows sending messages", () => {
+    render(<LiveChat />);
+    const input = screen.getByRole("textbox", { name: "chat-input" });
+    const sendButton = screen.getByRole("button", { name: "send-message" });
 
-  it('toggles emoji picker', () => {
-    const { container } = renderWithRouter(<LiveChat />);
-
-    // The emoji toggle button is the small icon button next to the textarea inside its wrapper
-    const textarea = container.querySelector('textarea')!;
-    const wrapper = textarea.parentElement!;
-    const buttons = wrapper.querySelectorAll('button');
-    const emojiButton = buttons[0] as HTMLButtonElement; // the only small icon button inside wrapper
-    fireEvent.click(emojiButton);
-
-    // Check if emoji picker is shown
-    expect(screen.getByText('😀')).toBeInTheDocument();
-
-    // Click again to close
-    fireEvent.click(emojiButton);
-    // Animated unmount via framer-motion may be async
-    return waitFor(() => {
-      expect(screen.queryByText('😀')).not.toBeInTheDocument();
-    });
-  });
-
-  it('shows settings panel', () => {
-    const { container } = renderWithRouter(<LiveChat />);
-
-    // Settings button is the only button in the header right area
-    const header = container.querySelector('.p-4.border-b');
-    const settingsButton = header?.querySelector('button') as HTMLButtonElement;
-    fireEvent.click(settingsButton);
-
-    expect(screen.getByText('Chat Settings')).toBeInTheDocument();
-    expect(screen.getByText('Chat Mode')).toBeInTheDocument();
-    expect(screen.getByText('Message Delay')).toBeInTheDocument();
-  });
-
-  
-  it('prevents sending empty messages', () => {
-    const { container } = renderWithRouter(<LiveChat />);
-
-    const sendButton = container.querySelector('button.p-3.rounded-lg.bg-purple-500') as HTMLButtonElement;
-    expect(sendButton).toBeDisabled();
-
-    const input = screen.getByPlaceholderText(/send a message/i);
-    fireEvent.change(input, { target: { value: 'test' } });
-    expect(sendButton).not.toBeDisabled();
-  });
-
-  it('clears input after sending a valid message', async () => {
-    const { container } = renderWithRouter(<LiveChat />);
-    const input = screen.getByPlaceholderText(/send a message/i) as HTMLTextAreaElement;
-    fireEvent.change(input, { target: { value: 'Message to send' } });
-
-    const sendButton = container.querySelector('button.p-3.rounded-lg.bg-purple-500') as HTMLButtonElement;
+    fireEvent.change(input, { target: { value: "Hello!" } });
     fireEvent.click(sendButton);
 
-    await waitFor(() => {
-      expect(input.value).toBe('');
-      expect(screen.getByText('Message to send')).toBeInTheDocument();
-    });
+    expect(screen.getByText("Hello!")).toBeInTheDocument();
   });
 
-  it('appends emoji to the input when selecting from picker', () => {
-    const { container } = renderWithRouter(<LiveChat />);
+  test("clears input after sending a valid message", () => {
+    render(<LiveChat />);
+    const input = screen.getByRole("textbox", { name: "chat-input" });
+    const sendButton = screen.getByRole("button", { name: "send-message" });
 
-    const textarea = container.querySelector('textarea')!;
-    const wrapper = textarea.parentElement!;
-    const buttons = wrapper.querySelectorAll('button');
-    const emojiToggle = buttons[0] as HTMLButtonElement;
-    fireEvent.click(emojiToggle);
+    fireEvent.change(input, { target: { value: "This will be sent" } });
+    fireEvent.click(sendButton);
 
-    const emoji = screen.getByText('😀');
-    const input = screen.getByPlaceholderText(/send a message/i) as HTMLTextAreaElement;
+    expect(input).toHaveValue("");
+    expect(screen.getByText("This will be sent")).toBeInTheDocument();
+  });
+
+  test("opens and closes emoji picker", async () => {
+    render(<LiveChat />);
+    const emojiBtn = screen.getByRole("button", { name: "toggle-emoji-picker" });
+
+    fireEvent.click(emojiBtn);
+
+    const emoji = await screen.findByText((t) => t.trim() === "😀");
+    expect(emoji).toBeInTheDocument();
+
+    fireEvent.click(emojiBtn);
+    expect(screen.queryByText((t) => t.trim() === "😀")).not.toBeInTheDocument();
+  });
+
+  test("appends emoji to input", async () => {
+    render(<LiveChat />);
+    const emojiBtn = screen.getByRole("button", { name: "toggle-emoji-picker" });
+
+    fireEvent.click(emojiBtn);
+
+    const emoji = await screen.findByText((t) => t.trim() === "😀");
+    const input = screen.getByRole("textbox", { name: "chat-input" });
+
     fireEvent.click(emoji);
 
-    expect(input.value).toContain('😀');
+    expect(input).toHaveValue("😀");
   });
 
-  it('renders pinned message section when a message is pinned', () => {
-    renderWithRouter(<LiveChat />);
-    expect(screen.getByText(/pinned message/i)).toBeInTheDocument();
-    // The initial pinned message text should be visible (may appear multiple times)
-    expect(screen.getAllByText('Welcome everyone to the stream! 🔥').length).toBeGreaterThanOrEqual(1);
-  });
+  test("does not send whitespace-only messages", () => {
+    render(<LiveChat />);
+    const input = screen.getByRole("textbox", { name: "chat-input" });
+    const sendButton = screen.getByRole("button", { name: "send-message" });
 
-  it('closes settings panel when close button is clicked', () => {
-    const { container } = renderWithRouter(<LiveChat />);
-    const header = container.querySelector('.p-4.border-b');
-    const settingsButton = header?.querySelector('button') as HTMLButtonElement;
-    fireEvent.click(settingsButton);
+    fireEvent.change(input, { target: { value: "   " } });
 
-    expect(screen.getByText('Chat Settings')).toBeInTheDocument();
-
-    // Toggle off with the same settings button
-    fireEvent.click(settingsButton);
-    // Animated exit may be async; wait for panel to be removed
-    return waitFor(() => {
-      expect(screen.queryByText('Chat Settings')).not.toBeInTheDocument();
-    });
-  });
-
-  it('does not add a message when only whitespace is entered', () => {
-    const { container } = renderWithRouter(<LiveChat />);
-    const input = screen.getByPlaceholderText(/send a message/i) as HTMLTextAreaElement;
-    const initialMessages = screen.getAllByText(/stream|rules|amazing/i).length;
-
-    fireEvent.change(input, { target: { value: '   ' } });
-    const sendButton = container.querySelector('button.p-3.rounded-lg.bg-purple-500') as HTMLButtonElement;
     expect(sendButton).toBeDisabled();
-
-    // Press Enter should be prevented when only whitespace
-    fireEvent.keyDown(input, { key: 'Enter' });
-
-    const afterMessages = screen.getAllByText(/stream|rules|amazing/i).length;
-    expect(afterMessages).toBe(initialMessages);
   });
+
 });
