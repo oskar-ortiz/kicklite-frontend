@@ -1,4 +1,3 @@
-// src/services/api/api.config.ts
 import axios from 'axios';
 
 export const API_URL = "https://streamora-backend.onrender.com";
@@ -12,26 +11,31 @@ export const API_ENDPOINTS = {
     refresh: `/api/auth/refresh`,
     me: `/api/auth/me`,
   },
+
   users: {
     profile: `/api/users/profile`,
     update: `/api/users/update`,
     follow: (userId: string) => `/api/users/${userId}/follow`,
     unfollow: (userId: string) => `/api/users/${userId}/unfollow`,
   },
+
   streams: {
     live: `/api/streams/live`,
-    byId: (streamId: string) => `/api/streams/${streamId}`,
+    byId: (streamId: string) => `/api/streams/${streamId}`, // ⚠ confirmar con tu backend
     start: `/api/streams/start`,
-    end: `/api/streams/end`,
+    end: `/api/streams/stop`, // ✔ correcto
   },
+
   categories: {
     all: `/api/categories`,
     byId: (categoryId: string) => `/api/categories/${categoryId}`,
   },
+
   chat: {
-    messages: (streamId: string) => `/api/chat/${streamId}/messages`,
+    messages: (streamId: string) => `/api/chat/${streamId}`,
     send: (streamId: string) => `/api/chat/${streamId}/send`,
   },
+
   health: `/api/health`,
 };
 
@@ -39,7 +43,7 @@ export const axiosConfig = {
   baseURL: API_BASE_URL,
   timeout: 30000,
   headers: { "Content-Type": "application/json" },
-  withCredentials: false, // 🔥 CORREGIDO
+  withCredentials: false,
 };
 
 export const api = axios.create(axiosConfig);
@@ -53,8 +57,9 @@ api.interceptors.request.use(
     }
 
     const url = (config.url || "").replace(/\/+/, "/");
-    const baseURL = (config.baseURL || API_BASE_URL).replace(/\/+$/, "");
-    console.log("📤 Request:", config.method?.toUpperCase(), `${baseURL}${url}`);
+    const base = (config.baseURL || API_BASE_URL).replace(/\/+$/, "");
+
+    console.log("📤 Request:", config.method?.toUpperCase(), `${base}${url}`);
 
     return config;
   },
