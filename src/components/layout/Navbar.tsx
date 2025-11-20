@@ -17,14 +17,16 @@ import {
   Sparkles
 } from 'lucide-react';
 import Avatar from '../common/Avatar';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
   const [notifications, setNotifications] = useState(false);
-  
+
   const navigate = useNavigate();
+  const { user, isAuthenticated, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -32,8 +34,8 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleSignOut = () => {
-    localStorage.removeItem('token');
+  const handleLogout = () => {
+    signOut();
     navigate('/login');
   };
 
@@ -63,6 +65,8 @@ export default function Navbar() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
+            
+            {/* Logo + Menu */}
             <div className="flex items-center space-x-4">
               <button 
                 onClick={() => setMobileMenu(!mobileMenu)}
@@ -70,6 +74,7 @@ export default function Navbar() {
               >
                 {mobileMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </button>
+
               <Link to="/" className="flex items-center space-x-2">
                 <Sparkles className="h-6 w-6 text-purple-500" />
                 <span className="text-xl font-bold text-white">streamora</span>
@@ -79,6 +84,7 @@ export default function Navbar() {
               </Link>
             </div>
 
+            {/* Nav links */}
             <div className="hidden md:flex items-center space-x-1">
               {navItems.map((item) => (
                 <Link
@@ -97,7 +103,10 @@ export default function Navbar() {
               ))}
             </div>
 
+            {/* SEARCH + ACCOUNT AREA */}
             <div className="flex items-center space-x-4">
+
+              {/* SEARCH BAR */}
               <div className="hidden sm:block relative">
                 <input
                   type="text"
@@ -107,6 +116,7 @@ export default function Navbar() {
                 <Search className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
               </div>
 
+              {/* NOTIFICATIONS */}
               <div className="relative">
                 <button 
                   onClick={() => setNotifications(!notifications)}
@@ -127,6 +137,7 @@ export default function Navbar() {
                       <div className="px-4 py-2 border-b border-slate-700">
                         <h3 className="font-semibold text-white">Notificaciones</h3>
                       </div>
+
                       {notificationsList.map((notification) => (
                         <button
                           key={notification.id}
@@ -142,102 +153,93 @@ export default function Navbar() {
                           </div>
                         </button>
                       ))}
-                      <div className="px-4 py-2 border-t border-slate-700 text-center">
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* ----------- ACCOUNT AREA ------------ */}
+              {!isAuthenticated ? (
+                <div className="flex items-center space-x-3">
+
+                  <Link
+                    to="/login"
+                    className="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 hover:text-white transition-all font-medium"
+                  >
+                    Iniciar Sesión
+                  </Link>
+
+                  <Link
+                    to="/register"
+                    className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-500 hover:to-pink-500 transition-all font-semibold shadow-md"
+                  >
+                    Registrarse
+                  </Link>
+
+                </div>
+              ) : (
+                <div className="relative">
+                  <button 
+                    onClick={() => setUserMenu(!userMenu)}
+                    className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                  >
+                    <User className="h-5 w-5" />
+                  </button>
+
+                  <AnimatePresence>
+                    {userMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="absolute right-0 mt-2 w-48 bg-slate-800 rounded-lg shadow-lg py-2 z-50"
+                      >
+                        <div className="px-4 py-3 border-b border-slate-700">
+                          <p className="text-sm font-semibold text-white">
+                            {user?.username}
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            @{user?.email?.split("@")[0]}
+                          </p>
+                        </div>
+
                         <Link 
-                          to="/notifications" 
-                          className="text-sm text-purple-400 hover:text-purple-300 font-medium"
-                          onClick={() => setNotifications(false)}
+                          to="/dashboard" 
+                          className="block px-4 py-2 text-sm text-white hover:bg-slate-700"
+                          onClick={() => setUserMenu(false)}
                         >
-                          Ver todas
+                          <Crown className="inline-block w-4 h-4 mr-2" />
+                          Dashboard
                         </Link>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
 
-              <div className="relative">
-                <button 
-                  onClick={() => setUserMenu(!userMenu)}
-                  className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
-                >
-                  <User className="h-5 w-5" />
-                </button>
+                        <Link 
+                          to="/settings" 
+                          className="block px-4 py-2 text-sm text-white hover:bg-slate-700"
+                          onClick={() => setUserMenu(false)}
+                        >
+                          <Settings className="inline-block w-4 h-4 mr-2" />
+                          Configuración
+                        </Link>
 
-                <AnimatePresence>
-                  {userMenu && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="absolute right-0 mt-2 w-48 bg-slate-800 rounded-lg shadow-lg py-2 z-50"
-                    >
-                      <div className="px-4 py-3 border-b border-slate-700">
-                        <p className="text-sm font-semibold text-white">Usuario</p>
-                        <p className="text-xs text-slate-400">@usuario</p>
-                      </div>
-                      <Link 
-                        to="/dashboard" 
-                        className="block px-4 py-2 text-sm text-white hover:bg-slate-700"
-                        onClick={() => setUserMenu(false)}
-                      >
-                        <Crown className="inline-block w-4 h-4 mr-2" />
-                        Dashboard
-                      </Link>
-                      <Link 
-                        to="/settings" 
-                        className="block px-4 py-2 text-sm text-white hover:bg-slate-700"
-                        onClick={() => setUserMenu(false)}
-                      >
-                        <Settings className="inline-block w-4 h-4 mr-2" />
-                        Configuración
-                      </Link>
-                      <button 
-                        onClick={handleSignOut}
-                        className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-slate-700"
-                      >
-                        <LogOut className="inline-block w-4 h-4 mr-2" />
-                        Cerrar sesión
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                        <button 
+                          onClick={handleLogout}
+                          className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-slate-700"
+                        >
+                          <LogOut className="inline-block w-4 h-4 mr-2" />
+                          Cerrar sesión
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+
             </div>
           </div>
         </div>
       </motion.nav>
 
-      <AnimatePresence>
-        {mobileMenu && (
-          <motion.div
-            initial={{ opacity: 0, x: -300 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -300 }}
-            className="fixed top-16 left-0 bottom-0 w-64 bg-slate-900 z-40 border-r border-white/5"
-          >
-            <div className="py-4">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className="relative px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 flex items-center space-x-3"
-                  onClick={() => setMobileMenu(false)}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.label}</span>
-                  {item.badge && (
-                    <span className="ml-auto bg-purple-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+      {/* MOBILE MENU OVERLAY */}
       <AnimatePresence>
         {(mobileMenu || userMenu || notifications) && (
           <motion.div
@@ -253,6 +255,7 @@ export default function Navbar() {
           />
         )}
       </AnimatePresence>
+
     </>
   );
 }

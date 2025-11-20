@@ -22,34 +22,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Verificar token al iniciar
+  // Cargar usuario si hay token
   useEffect(() => {
     const loadUser = async () => {
       const token = localStorage.getItem('token');
-      
+
       if (!token) {
-        console.log('❌ No hay token guardado');
         setLoading(false);
         return;
       }
 
       try {
-        console.log('🔍 Verificando token con el backend...');
-        
-        // ✅ USAR EL TOKEN PARA OBTENER LOS DATOS DEL USUARIO
-        // Intenta primero /auth/me, si falla intenta /users/profile
-        let response;
-        try {
-          response = await api.get('/auth/me');
-        } catch (error) {
-          console.log('⚠️ /auth/me no disponible, intentando /users/profile...');
-          response = await api.get('/users/profile');
-        }
-        
-        setUser(response.data);
-        console.log('✅ Usuario cargado desde backend:', response.data);
-      } catch (error: any) {
-        console.error('❌ Error al obtener usuario:', error.message);
+        const response = await api.get('/api/auth/me');
+        setUser(response.data.user || response.data);
+      } catch {
         localStorage.removeItem('token');
         setUser(null);
       } finally {
@@ -60,46 +46,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadUser();
   }, []);
 
+  // LOGIN
   const signIn = async (email: string, password: string) => {
     try {
-      console.log('🔐 Intentando login...');
-      
-      // ✅ Paso 1: Hacer login y obtener token
-      const loginResponse = await api.post('/auth/login', { email, password });
-      const { token } = loginResponse.data;
-      
-      if (!token) {
-        throw new Error('El backend no devolvió un token');
-      }
+      const res = await api.post('/api/auth/login', { email, password });
+      const { token, user } = res.data;
 
-      // ✅ Paso 2: Guardar el token
       localStorage.setItem('token', token);
-      console.log('✅ Token guardado');
-
-      // ✅ Paso 3: Usar el token para obtener datos del usuario
-      try {
-        const userResponse = await api.get('/auth/me');
-        setUser(userResponse.data);
-        console.log('✅ Usuario obtenido:', userResponse.data);
-      } catch (error) {
-        console.log('⚠️ /auth/me no disponible, intentando /users/profile...');
-        const userResponse = await api.get('/users/profile');
-        setUser(userResponse.data);
-        console.log('✅ Usuario obtenido:', userResponse.data);
-      }
-
-      console.log('✅ Login exitoso');
-    } catch (error: any) {
-      console.error('❌ Error en login:', error.response?.data?.message || error.message);
+      setUser(user);
+    } catch (error) {
       localStorage.removeItem('token');
+      setUser(null);
       throw error;
     }
   };
 
+  // LOGOUT
   const signOut = () => {
     localStorage.removeItem('token');
     setUser(null);
-    console.log('✅ Sesión cerrada');
   };
 
   return (
@@ -117,10 +82,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);
