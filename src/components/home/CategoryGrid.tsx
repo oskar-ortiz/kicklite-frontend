@@ -1,11 +1,12 @@
-import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { safeLocale } from "../../utils/safeFormat";
 
 interface Category {
   id: string;
   name: string;
   imageUrl: string;
-  viewers: number;
+  viewers: number | string | null;
 }
 
 interface CategoryGridProps {
@@ -14,17 +15,17 @@ interface CategoryGridProps {
 
 const defaultCategories: Category[] = [
   {
-    id: '1',
-    name: 'League of Legends',
-    imageUrl: '/images/categories/lol.jpg',
-    viewers: 250000
+    id: "1",
+    name: "League of Legends",
+    imageUrl: "/images/categories/lol.jpg",
+    viewers: 250000,
   },
   {
-    id: '2', 
-    name: 'Just Chatting',
-    imageUrl: '/images/categories/just-chatting.jpg',
-    viewers: 180000
-  }
+    id: "2",
+    name: "Just Chatting",
+    imageUrl: "/images/categories/just-chatting.jpg",
+    viewers: 180000,
+  },
 ];
 
 const CategoryGrid = ({ categories = defaultCategories }: CategoryGridProps) => {
@@ -42,11 +43,20 @@ const CategoryGrid = ({ categories = defaultCategories }: CategoryGridProps) => 
                 src={category.imageUrl}
                 alt={category.name}
                 className="object-cover w-full h-full"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src =
+                    `https://via.placeholder.com/300x200?text=${encodeURIComponent(
+                      category.name
+                    )}`;
+                }}
               />
             </div>
+
             <div className="p-4">
               <h3 className="font-bold text-lg text-white">{category.name}</h3>
-              <p className="text-gray-400">{category.viewers.toLocaleString()} viewers</p>
+              <p className="text-gray-400">
+                {safeLocale(category.viewers)} viewers
+              </p>
             </div>
           </motion.div>
         </Link>

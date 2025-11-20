@@ -1,11 +1,12 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { safeLocale } from '../../utils/safeFormat';
 
 interface Category {
   id: string;
   name: string;
   imageUrl: string;
-  viewers: number;
+  viewers: number | string | null; // más seguro
 }
 
 interface CategoryGridProps {
@@ -17,34 +18,22 @@ const defaultCategories: Category[] = [
     id: '1',
     name: 'League of Legends',
     imageUrl: 'https://picsum.photos/300/200?random=lol',
-    viewers: 250000
+    viewers: 250000,
   },
   {
     id: '2',
     name: 'Just Chatting',
     imageUrl: 'https://picsum.photos/300/200?random=chatting',
-    viewers: 180000
+    viewers: 180000,
   },
-  {
-    id: '3',
-    name: 'Valorant',
-    imageUrl: 'https://picsum.photos/300/200?random=valorant',
-    viewers: 120000
-  },
-  {
-    id: '4',
-    name: 'Counter-Strike 2',
-    imageUrl: 'https://picsum.photos/300/200?random=cs2',
-    viewers: 95000
-  }
 ];
 
 export default function CategoriesGrid({ categories = defaultCategories }: CategoryGridProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4">
       {categories.map((category) => (
-        <Link 
-          to={`/category/${category.id}`} 
+        <Link
+          to={`/category/${category.id}`}
           key={category.id}
           className="group relative overflow-hidden rounded-lg bg-slate-800 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
         >
@@ -58,15 +47,19 @@ export default function CategoriesGrid({ categories = defaultCategories }: Categ
               alt={category.name}
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
               onError={(e) => {
-                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x200?text=' + category.name;
+                (e.target as HTMLImageElement).src =
+                  `https://via.placeholder.com/300x200?text=${encodeURIComponent(category.name)}`;
               }}
             />
+
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           </motion.div>
+
           <div className="p-4">
             <h3 className="mb-1 text-lg font-bold text-white">{category.name}</h3>
+
             <p className="text-sm text-slate-300">
-              {category.viewers.toLocaleString()} viewers
+              {safeLocale(category.viewers)} viewers
             </p>
           </div>
         </Link>
