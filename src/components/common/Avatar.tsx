@@ -10,11 +10,11 @@ interface AvatarProps {
 }
 
 const sizeClasses = {
-  xs: 'w-6 h-6 text-xs',
-  sm: 'w-10 h-10 text-sm',
-  md: 'w-12 h-12 text-base',
-  lg: 'w-16 h-16 text-lg',
-  xl: 'w-24 h-24 text-2xl',
+  xs: 'w-6 h-6',
+  sm: 'w-10 h-10',
+  md: 'w-12 h-12',
+  lg: 'w-16 h-16',
+  xl: 'w-24 h-24',
 };
 
 const iconSizes = {
@@ -25,10 +25,9 @@ const iconSizes = {
   xl: 'w-12 h-12',
 };
 
-export default function Avatar({ src, alt, size = 'md', className = '' }: AvatarProps) {
+export default function Avatar({ src, alt = 'Avatar', size = 'md', className = '' }: AvatarProps) {
   const [imageError, setImageError] = useState(false);
 
-  // ✅ Si la imagen falla al cargar, mostrar fallback
   const handleImageError = () => {
     setImageError(true);
   };
@@ -40,12 +39,11 @@ export default function Avatar({ src, alt, size = 'md', className = '' }: Avatar
       {src && !imageError ? (
         <img
           src={src}
-          alt={alt || 'Avatar'}
+          alt={alt}
           onError={handleImageError}
           className="w-full h-full object-cover"
         />
       ) : (
-        // ✅ Fallback: Icono de usuario si no hay imagen o falla
         <User className={`text-white ${iconSizes[size]}`} />
       )}
     </div>

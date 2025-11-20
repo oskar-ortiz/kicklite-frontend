@@ -12,6 +12,7 @@ import {
   MoreVertical,
   Pin,
 } from 'lucide-react';
+// ✅ CORREGIDO: Ruta correcta para Avatar
 import Avatar from '../common/Avatar';
 
 interface Message {
@@ -144,7 +145,7 @@ export default function LiveChat() {
               )}
 
               <div className="flex items-start gap-3">
-                {/* ✅ AVATAR SIN SRC - Sin errores */}
+                {/* ✅ Avatar Component */}
                 <Avatar size="sm" alt={msg.user} />
 
                 <div className="flex-1 min-w-0">

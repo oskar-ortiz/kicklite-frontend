@@ -44,7 +44,6 @@ export default function Navbar() {
     { icon: TrendingUp, label: 'Trending', href: '/trending' },
   ];
 
-  // ✅ SIN RUTAS DE IMÁGENES ROTAS - Usando componente Avatar
   const notificationsList = [
     { id: 1, user: 'TheKing', action: 'está en vivo', time: '2m' },
     { id: 2, user: 'ProGamer', action: 'te mencionó', time: '15m' },
@@ -64,7 +63,6 @@ export default function Navbar() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Left side - Logo and Menu */}
             <div className="flex items-center space-x-4">
               <button 
                 onClick={() => setMobileMenu(!mobileMenu)}
@@ -81,7 +79,6 @@ export default function Navbar() {
               </Link>
             </div>
 
-            {/* Center - Navigation */}
             <div className="hidden md:flex items-center space-x-1">
               {navItems.map((item) => (
                 <Link
@@ -100,9 +97,7 @@ export default function Navbar() {
               ))}
             </div>
 
-            {/* Right side - Search and Actions */}
             <div className="flex items-center space-x-4">
-              {/* Search */}
               <div className="hidden sm:block relative">
                 <input
                   type="text"
@@ -112,7 +107,6 @@ export default function Navbar() {
                 <Search className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
               </div>
 
-              {/* Notifications */}
               <div className="relative">
                 <button 
                   onClick={() => setNotifications(!notifications)}
@@ -138,7 +132,6 @@ export default function Navbar() {
                           key={notification.id}
                           className="w-full px-4 py-3 flex items-center space-x-3 hover:bg-slate-700 transition-colors"
                         >
-                          {/* ✅ USANDO COMPONENTE AVATAR SIN SRC */}
                           <Avatar size="sm" alt={notification.user} />
                           <div className="flex-1 text-left">
                             <p className="text-sm text-white">
@@ -163,7 +156,6 @@ export default function Navbar() {
                 </AnimatePresence>
               </div>
 
-              {/* User Menu */}
               <div className="relative">
                 <button 
                   onClick={() => setUserMenu(!userMenu)}
@@ -216,7 +208,6 @@ export default function Navbar() {
         </div>
       </motion.nav>
 
-      {/* Mobile Menu */}
       <AnimatePresence>
         {mobileMenu && (
           <motion.div
@@ -247,7 +238,6 @@ export default function Navbar() {
         )}
       </AnimatePresence>
 
-      {/* Overlay */}
       <AnimatePresence>
         {(mobileMenu || userMenu || notifications) && (
           <motion.div
