@@ -1,60 +1,72 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import LiveChat from './LiveChat';
+import { render, screen, fireEvent } from "@testing-library/react";
+import LiveChat from "./LiveChat";
 
-describe("LiveChat", () => {
+const mockSendMessage = vi.fn();
+const mockConnect = vi.fn();
 
-  test("renders the chat interface", () => {
-    render(<LiveChat />);
+vi.mock("../../context/ChatContext", () => ({
+  useChat: () => ({
+    messages: [],
+    sendMessage: mockSendMessage,
+    connectToRoom: mockConnect,
+  }),
+}));
 
-    expect(screen.getByText("Chatting")).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: "chat-input" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "send-message" })).toBeInTheDocument();
+const renderChat = () => render(<LiveChat streamId="123" />);
+
+describe("LiveChat Component", () => {
+  beforeEach(() => {
+    mockSendMessage.mockClear();
+    mockConnect.mockClear();
+  });
+
+  test("renders chat input and send button", () => {
+    renderChat();
+    expect(screen.getByLabelText("chat-input")).toBeInTheDocument();
+    expect(screen.getByLabelText("send-message")).toBeInTheDocument();
   });
 
   test("allows sending messages", () => {
-    render(<LiveChat />);
-    const input = screen.getByRole("textbox", { name: "chat-input" });
-    const sendButton = screen.getByRole("button", { name: "send-message" });
+    renderChat();
+    const input = screen.getByLabelText("chat-input");
+    const send = screen.getByLabelText("send-message");
 
     fireEvent.change(input, { target: { value: "Hello!" } });
-    fireEvent.click(sendButton);
+    fireEvent.click(send);
 
-    expect(screen.getByText("Hello!")).toBeInTheDocument();
+    expect(mockSendMessage).toHaveBeenCalledWith("123", "Hello!", "You");
+    expect(input).toHaveValue("");
   });
 
-  test("clears input after sending a valid message", () => {
-    render(<LiveChat />);
-    const input = screen.getByRole("textbox", { name: "chat-input" });
-    const sendButton = screen.getByRole("button", { name: "send-message" });
+  test("clears input after sending message", () => {
+    renderChat();
+    const input = screen.getByLabelText("chat-input");
+    const send = screen.getByLabelText("send-message");
 
-    fireEvent.change(input, { target: { value: "This will be sent" } });
-    fireEvent.click(sendButton);
+    fireEvent.change(input, { target: { value: "Test msg" } });
+    fireEvent.click(send);
 
     expect(input).toHaveValue("");
-    expect(screen.getByText("This will be sent")).toBeInTheDocument();
   });
 
-  test("opens and closes emoji picker", async () => {
-    render(<LiveChat />);
-    const emojiBtn = screen.getByRole("button", { name: "toggle-emoji-picker" });
+  test("opens and closes emoji picker", () => {
+    renderChat();
+    const btn = screen.getByLabelText("toggle-emoji-picker");
 
-    fireEvent.click(emojiBtn);
+    fireEvent.click(btn);
+    expect(screen.getByLabelText("emoji-😀")).toBeInTheDocument();
 
-    const emoji = await screen.findByText((t) => t.trim() === "😀");
-    expect(emoji).toBeInTheDocument();
-
-    fireEvent.click(emojiBtn);
-    expect(screen.queryByText((t) => t.trim() === "😀")).not.toBeInTheDocument();
+    fireEvent.click(btn);
+    expect(screen.queryByLabelText("emoji-😀")).not.toBeInTheDocument();
   });
 
-  test("appends emoji to input", async () => {
-    render(<LiveChat />);
-    const emojiBtn = screen.getByRole("button", { name: "toggle-emoji-picker" });
+  test("appends emoji to input", () => {
+    renderChat();
+    const btn = screen.getByLabelText("toggle-emoji-picker");
+    fireEvent.click(btn);
 
-    fireEvent.click(emojiBtn);
-
-    const emoji = await screen.findByText((t) => t.trim() === "😀");
-    const input = screen.getByRole("textbox", { name: "chat-input" });
+    const emoji = screen.getByLabelText("emoji-😀");
+    const input = screen.getByLabelText("chat-input");
 
     fireEvent.click(emoji);
 
@@ -62,13 +74,12 @@ describe("LiveChat", () => {
   });
 
   test("does not send whitespace-only messages", () => {
-    render(<LiveChat />);
-    const input = screen.getByRole("textbox", { name: "chat-input" });
-    const sendButton = screen.getByRole("button", { name: "send-message" });
+    renderChat();
+    const input = screen.getByLabelText("chat-input");
+    const send = screen.getByLabelText("send-message");
 
     fireEvent.change(input, { target: { value: "   " } });
 
-    expect(sendButton).toBeDisabled();
+    expect(send).toBeDisabled();
   });
-
 });
