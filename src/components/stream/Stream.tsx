@@ -1,9 +1,11 @@
+// src/pages/Stream/Stream.tsx
+
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../../services/api/api.config";
 import { Stream } from "../../types/stream.types";
 
-import LiveChat from "../../components/stream/LiveChat"; // ✅ CORREGIDO
+import LiveChat from "../../components/stream/LiveChat";
 import { safeLocale } from "../../utils/safeFormat";
 
 export default function StreamPage() {
@@ -62,6 +64,9 @@ export default function StreamPage() {
     <div className="min-h-screen bg-slate-950 pt-20">
       <div className="container mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
 
+        {/* ====================== */}
+        {/*   VIDEO + INFO         */}
+        {/* ====================== */}
         <div className="lg:col-span-2">
           <h1 className="text-3xl font-bold text-white mb-4">
             {stream.title || "Stream sin título"}
@@ -99,8 +104,10 @@ export default function StreamPage() {
           <p className="text-slate-300 mt-6">{stream.description || "Sin descripción"}</p>
         </div>
 
-        {/* CHAT */}
-        <div>
+        {/* ====================== */}
+        {/*         CHAT           */}
+        {/* ====================== */}
+        <div className="lg:col-span-1">
           <LiveChat streamId={id!} />
         </div>
 

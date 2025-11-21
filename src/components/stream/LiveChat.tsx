@@ -1,20 +1,30 @@
+// src/components/stream/LiveChat.tsx
+
 import { useState, useEffect, useRef } from "react";
 import { Smile, Send, Settings } from "lucide-react";
 import Avatar from "../common/Avatar";
 import { useChat } from "../../context/ChatContext";
 import { safeDate } from "../../utils/safeFormat";
 
-// ✅ ESTA ES LA PARTE QUE FALTABA
 export interface LiveChatProps {
   streamId: string;
 }
+
+// Configuración slow mode / anti-spam
+const SLOW_MODE_SECONDS = 5;
+const SPAM_WINDOW_MS = 10_000;
+const SPAM_MAX_MSGS = 5;
 
 export default function LiveChat({ streamId }: LiveChatProps) {
   const { messages, sendMessage, connectToRoom } = useChat();
   const [input, setInput] = useState("");
   const [showEmojis, setShowEmojis] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const [warning, setWarning] = useState<string | null>(null);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const messageTimesRef = useRef<number[]>([]);
+  const lastMessageRef = useRef<string>("");
 
   useEffect(() => {
     if (streamId) connectToRoom(streamId);
@@ -24,17 +34,58 @@ export default function LiveChat({ streamId }: LiveChatProps) {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const interval = setInterval(
+      () => setCooldown((c) => (c > 0 ? c - 1 : 0)),
+      1000
+    );
+    return () => clearInterval(interval);
+  }, [cooldown]);
+
+  useEffect(() => {
+    if (input.length > 0 && warning) {
+      setWarning(null);
+    }
+  }, [input, warning]);
+
   const emojis = ["😀", "😂", "❤️", "🔥", "👍", "🎮", "⚡", "💎", "👑", "🏆"];
 
   const handleSend = () => {
-    if (!input.trim()) return;
-    sendMessage(streamId, input, "You");
+    const text = input.trim();
+    if (!text) return;
+
+    if (cooldown > 0) {
+      setWarning(`Slow mode activo: espera ${cooldown}s.`);
+      return;
+    }
+
+    const now = Date.now();
+    messageTimesRef.current = messageTimesRef.current.filter(
+      (t) => now - t < SPAM_WINDOW_MS
+    );
+
+    if (messageTimesRef.current.length >= SPAM_MAX_MSGS) {
+      setWarning("Estás enviando mensajes muy rápido. Espera unos segundos.");
+      return;
+    }
+
+    if (lastMessageRef.current === text) {
+      setWarning("No repitas el mismo mensaje.");
+      return;
+    }
+
+    messageTimesRef.current.push(now);
+    lastMessageRef.current = text;
+    setCooldown(SLOW_MODE_SECONDS);
+
+    sendMessage(streamId, text, "You");
     setInput("");
   };
 
   return (
     <div className="h-[700px] bg-gradient-to-b from-slate-900 to-slate-950 rounded-2xl border border-white/5 flex flex-col overflow-hidden">
-
+      {/* HEADER */}
       <div className="bg-slate-900/50 backdrop-blur-xl border-b border-white/5 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -48,6 +99,7 @@ export default function LiveChat({ streamId }: LiveChatProps) {
         </div>
       </div>
 
+      {/* MENSAJES */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.map((msg) => (
           <div key={msg.id} className="group relative">
@@ -58,7 +110,7 @@ export default function LiveChat({ streamId }: LiveChatProps) {
                 <div className="flex items-center gap-2 mb-1">
                   <span
                     className="font-bold text-sm"
-                    style={{ color: msg.color }}
+                    style={{ color: msg.color || "#ffffff" }}
                   >
                     {msg.user}
                   </span>
@@ -82,9 +134,16 @@ export default function LiveChat({ streamId }: LiveChatProps) {
         <div ref={chatEndRef} />
       </div>
 
+      {/* WARNING */}
+      {warning && (
+        <div className="px-4 py-2 text-xs text-yellow-400 bg-yellow-500/10 border-t border-yellow-500/30">
+          {warning}
+        </div>
+      )}
+
+      {/* INPUT */}
       <div className="bg-slate-900/50 backdrop-blur-xl border-t border-white/5 p-4">
         <div className="flex gap-2">
-
           <div className="relative">
             <button
               aria-label="toggle-emoji-picker"
@@ -95,7 +154,7 @@ export default function LiveChat({ streamId }: LiveChatProps) {
             </button>
 
             {showEmojis && (
-              <div className="absolute bottom-full mb-2 bg-slate-800 p-3 rounded-xl border border-white/10 grid grid-cols-5 gap-2">
+              <div className="absolute bottom-full mb-2 bg-slate-800 p-3 rounded-xl border border-white/10 grid grid-cols-5 gap-2 z-50">
                 {emojis.map((e) => (
                   <button
                     key={e}
@@ -114,7 +173,11 @@ export default function LiveChat({ streamId }: LiveChatProps) {
             aria-label="chat-input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Send a message..."
+            placeholder={
+              cooldown > 0
+                ? `Slow mode: espera ${cooldown}s...`
+                : "Send a message..."
+            }
             className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white resize-none"
             rows={1}
           />
@@ -122,12 +185,11 @@ export default function LiveChat({ streamId }: LiveChatProps) {
           <button
             aria-label="send-message"
             onClick={handleSend}
-            disabled={!input.trim()}
+            disabled={!input.trim() || cooldown > 0}
             className="p-3 bg-purple-600 rounded-xl disabled:opacity-40"
           >
             <Send className="w-5 h-5 text-white" />
           </button>
-
         </div>
       </div>
     </div>
