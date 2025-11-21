@@ -1,3 +1,4 @@
+// src/components/home/CategoryGrid.tsx
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { safeLocale } from "../../utils/safeFormat";
@@ -5,13 +6,16 @@ import { safeLocale } from "../../utils/safeFormat";
 interface Category {
   id: string;
   name: string;
-  imageUrl: string;
+  imageUrl: string | null;
   viewers: number | string | null;
 }
 
 interface CategoryGridProps {
   categories?: Category[];
 }
+
+// 🔥 Fallback LOCAL (evita errores y lag)
+const fallbackImage = "/images/categories/fallback.jpg";
 
 const defaultCategories: Category[] = [
   {
@@ -40,14 +44,11 @@ const CategoryGrid = ({ categories = defaultCategories }: CategoryGridProps) => 
           >
             <div className="aspect-w-16 aspect-h-9">
               <img
-                src={category.imageUrl}
+                src={category.imageUrl || fallbackImage}
                 alt={category.name}
                 className="object-cover w-full h-full"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src =
-                    `https://via.placeholder.com/300x200?text=${encodeURIComponent(
-                      category.name
-                    )}`;
+                  (e.target as HTMLImageElement).src = fallbackImage;
                 }}
               />
             </div>
@@ -55,7 +56,7 @@ const CategoryGrid = ({ categories = defaultCategories }: CategoryGridProps) => 
             <div className="p-4">
               <h3 className="font-bold text-lg text-white">{category.name}</h3>
               <p className="text-gray-400">
-                {safeLocale(category.viewers)} viewers
+                {safeLocale(category.viewers)} espectadores
               </p>
             </div>
           </motion.div>
