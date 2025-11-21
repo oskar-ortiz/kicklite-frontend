@@ -7,7 +7,6 @@ import {
   Bell,
   User,
   Menu,
-  X,
   Home,
   Tv,
   Gamepad2,
@@ -20,15 +19,30 @@ import {
 
 import Avatar from "../common/Avatar";
 import { useAuth } from "../../context/AuthContext";
-
-// IMPORTA EL SIDEBAR
 import Sidebar from "./Sidebar";
+
+// 🔥 Importamos streams reales
+import {
+  getLiveStreams,
+  type Stream,
+} from "../../services/api/streamService";
+
+interface NotificationItem {
+  id: string;
+  user: string;
+  title: string;
+  viewerCount: number;
+  avatarUrl?: string;
+}
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
-  const [notifications, setNotifications] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  const [notificationItems, setNotificationItems] = useState<NotificationItem[]>([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
 
   const navigate = useNavigate();
   const { user, isAuthenticated, signOut } = useAuth();
@@ -37,6 +51,33 @@ export default function Navbar() {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // 🔥 Cargar notificaciones reales desde el backend (streams en vivo)
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        setLoadingNotifications(true);
+        const liveStreams: Stream[] = await getLiveStreams();
+
+        const mapped: NotificationItem[] = (liveStreams || []).map((s) => ({
+          id: s.id,
+          user: s.user?.username || "Streamer",
+          title: s.title || "En directo",
+          viewerCount: s.viewerCount || 0,
+          avatarUrl: s.user?.avatarUrl,
+        }));
+
+        setNotificationItems(mapped);
+      } catch (err) {
+        console.error("❌ Error cargando notificaciones (streams en vivo):", err);
+        setNotificationItems([]);
+      } finally {
+        setLoadingNotifications(false);
+      }
+    };
+
+    loadNotifications();
   }, []);
 
   const handleLogout = () => {
@@ -49,12 +90,6 @@ export default function Navbar() {
     { icon: Tv, label: "Live", href: "/live", badge: "24K" },
     { icon: Gamepad2, label: "Categories", href: "/categories" },
     { icon: TrendingUp, label: "Trending", href: "/trending" },
-  ];
-
-  const notificationsList = [
-    { id: 1, user: "TheKing", action: "está en vivo", time: "2m" },
-    { id: 2, user: "ProGamer", action: "te mencionó", time: "15m" },
-    { id: 3, user: "StreamQueen", action: "te siguió", time: "1h" },
   ];
 
   return (
@@ -71,9 +106,8 @@ export default function Navbar() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* LEFT SIDE */}
+            {/* LEFT */}
             <div className="flex items-center space-x-4">
-              {/* TOGGLE SIDEBAR */}
               <button
                 onClick={() => setMobileMenu(true)}
                 className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
@@ -81,7 +115,6 @@ export default function Navbar() {
                 <Menu className="h-5 w-5" />
               </button>
 
-              {/* LOGO */}
               <Link to="/" className="flex items-center space-x-2">
                 <Sparkles className="h-6 w-6 text-purple-500" />
                 <span className="text-xl font-bold text-white">streamora</span>
@@ -91,7 +124,7 @@ export default function Navbar() {
               </Link>
             </div>
 
-            {/* MIDDLE NAV LINKS */}
+            {/* MIDDLE LINKS */}
             <div className="hidden md:flex items-center space-x-1">
               {navItems.map((item) => (
                 <Link
@@ -110,7 +143,7 @@ export default function Navbar() {
               ))}
             </div>
 
-            {/* RIGHT SIDE */}
+            {/* RIGHT */}
             <div className="flex items-center space-x-4">
               {/* SEARCH */}
               <div className="hidden sm:block relative">
@@ -125,39 +158,66 @@ export default function Navbar() {
               {/* NOTIFICATIONS */}
               <div className="relative">
                 <button
-                  onClick={() => setNotifications(!notifications)}
+                  onClick={() => setNotificationsOpen(!notificationsOpen)}
                   className="p-2 rounded-lg hover:bg-slate-800 text-slate-400"
                 >
                   <Bell className="h-5 w-5" />
                 </button>
 
                 <AnimatePresence>
-                  {notifications && (
+                  {notificationsOpen && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
                       className="absolute right-0 mt-2 w-80 bg-slate-800 rounded-lg shadow-lg py-2 z-50"
                     >
-                      <div className="px-4 py-2 border-b border-slate-700">
+                      <div className="px-4 py-2 border-b border-slate-700 flex items-center justify-between">
                         <h3 className="font-semibold text-white">
-                          Notificaciones
+                          Canales en vivo
                         </h3>
+                        {loadingNotifications && (
+                          <span className="text-xs text-slate-400">
+                            Cargando...
+                          </span>
+                        )}
                       </div>
 
-                      {notificationsList.map((n) => (
-                        <div
+                      {!loadingNotifications && notificationItems.length === 0 && (
+                        <div className="px-4 py-4 text-sm text-slate-400">
+                          No hay canales en vivo en este momento.
+                        </div>
+                      )}
+
+                      {notificationItems.map((n) => (
+                        <button
                           key={n.id}
-                          className="px-4 py-3 flex items-center space-x-3 hover:bg-slate-700"
+                          onClick={() => {
+                            setNotificationsOpen(false);
+                            navigate(`/stream/${n.id}`);
+                          }}
+                          className="w-full text-left px-4 py-3 flex items-center space-x-3 hover:bg-slate-700"
                         >
-                          <Avatar size="sm" alt={n.user} />
+                          <Avatar
+                            size="sm"
+                            alt={n.user}
+                            src={n.avatarUrl}
+                          />
                           <div className="flex-1">
                             <p className="text-white text-sm">
-                              <strong>{n.user}</strong> {n.action}
+                              <strong>{n.user}</strong>{" "}
+                              <span className="text-slate-300">
+                                está en vivo
+                              </span>
                             </p>
-                            <p className="text-xs text-slate-400">{n.time}</p>
+                            <p className="text-xs text-slate-400 truncate">
+                              {n.title}
+                            </p>
                           </div>
-                        </div>
+                          <span className="text-xs text-purple-300 font-semibold">
+                            {n.viewerCount.toLocaleString("es-ES")} viewers
+                          </span>
+                        </button>
                       ))}
                     </motion.div>
                   )}
@@ -186,7 +246,15 @@ export default function Navbar() {
                     onClick={() => setUserMenu(!userMenu)}
                     className="p-2 rounded-lg hover:bg-slate-800"
                   >
-                    <User className="h-5 w-5 text-slate-400" />
+                    {user?.avatarUrl ? (
+                      <img
+                        src={user.avatarUrl}
+                        alt="avatar"
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <User className="h-5 w-5 text-slate-400" />
+                    )}
                   </button>
 
                   <AnimatePresence>

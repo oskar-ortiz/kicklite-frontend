@@ -1,5 +1,20 @@
-import { Link } from "react-router-dom";
-import { Home, Tv2, Gamepad2, TrendingUp, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Home,
+  Tv,
+  Gamepad2,
+  TrendingUp,
+  Radio,
+  Users,
+  X,
+} from "lucide-react";
+
+import {
+  getLiveStreams,
+  type Stream,
+} from "../../services/api/streamService";
 
 interface SidebarProps {
   open: boolean;
@@ -7,60 +22,144 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [liveStreams, setLiveStreams] = useState<Stream[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const loadStreams = async () => {
+      try {
+        setLoading(true);
+        const streams = await getLiveStreams();
+        setLiveStreams(streams || []);
+      } catch (err) {
+        console.error("❌ Error cargando streams en Sidebar:", err);
+        setLiveStreams([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (open) {
+      loadStreams();
+    }
+  }, [open]);
+
+  const navItems = [
+    { icon: Home, label: "Home", href: "/" },
+    { icon: Tv, label: "Live", href: "/live" },
+    { icon: Gamepad2, label: "Categories", href: "/categories" },
+    { icon: TrendingUp, label: "Trending", href: "/trending" },
+  ];
+
   return (
-    <div
-      className={`fixed inset-0 z-40 transition-all duration-300 ${
-        open ? "pointer-events-auto" : "pointer-events-none"
-      }`}
-    >
-      {/* Fondo oscuro */}
-      <div
-        className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity ${
-          open ? "opacity-100" : "opacity-0"
-        }`}
-        onClick={onClose}
-      />
+    <AnimatePresence>
+      {open && (
+        <motion.aside
+          initial={{ x: -260 }}
+          animate={{ x: 0 }}
+          exit={{ x: -260 }}
+          transition={{ type: "spring", stiffness: 260, damping: 25 }}
+          className="fixed top-0 left-0 bottom-0 w-64 bg-slate-950/95 backdrop-blur-xl border-r border-white/10 z-50 flex flex-col"
+        >
+          {/* HEADER */}
+          <div className="flex items-center justify-between px-4 h-16 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-lg font-bold">
+                S
+              </div>
+              <div>
+                <p className="text-white font-semibold text-sm leading-none">
+                  streamora
+                </p>
+                <p className="text-[10px] text-white/50 uppercase tracking-wide">
+                  space
+                </p>
+              </div>
+            </div>
 
-      {/* Menu lateral */}
-      <div
-        className={`absolute left-0 top-0 h-full w-72 bg-slate-900 border-r border-white/10 p-6 transition-transform duration-300 ${
-          open ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <button onClick={onClose} className="mb-6">
-          <X className="w-6 h-6 text-white" />
-        </button>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
 
-        <nav className="space-y-4 text-white">
-          <Link
-            to="/"
-            className="flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg"
-          >
-            <Home className="w-5 h-5" /> Home
-          </Link>
+          {/* NAV LINKS */}
+          <nav className="px-2 py-4 space-y-1">
+            {navItems.map((item) => {
+              const active = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  onClick={onClose}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
+                    active
+                      ? "bg-purple-600/80 text-white"
+                      : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  }`}
+                >
+                  <item.icon className="w-4 h-4" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
 
-          <Link
-            to="/live"
-            className="flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg"
-          >
-            <Tv2 className="w-5 h-5" /> Live
-          </Link>
+          {/* LIVE CHANNELS */}
+          <div className="px-4 pt-2 pb-3 border-t border-white/10 mt-auto">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2 text-xs text-slate-400 uppercase tracking-wide">
+                <Radio className="w-3 h-3 text-red-400" />
+                <span>Canales en vivo</span>
+              </div>
+              {loading && (
+                <span className="text-[10px] text-slate-500">Cargando...</span>
+              )}
+            </div>
 
-          <Link
-            to="/categories"
-            className="flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg"
-          >
-            <Gamepad2 className="w-5 h-5" /> Categories
-          </Link>
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+              {liveStreams.length === 0 && !loading && (
+                <p className="text-xs text-slate-500">
+                  No hay streams en vivo en este momento.
+                </p>
+              )}
 
-          <Link
-            to="/trending"
-            className="flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg"
-          >
-            <TrendingUp className="w-5 h-5" /> Trending
-          </Link>
-        </nav>
-      </div>
-    </div>
+              {liveStreams.map((stream) => (
+                <button
+                  key={stream.id}
+                  onClick={() => {
+                    onClose();
+                    navigate(`/stream/${stream.id}`);
+                  }}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-800 text-left"
+                >
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xs text-white">
+                    {stream.user?.username?.charAt(0).toUpperCase() || "S"}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-white truncate">
+                      {stream.user?.username || "Streamer"}
+                    </p>
+                    <p className="text-[11px] text-slate-400 truncate">
+                      {stream.title || "En directo"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Users className="w-3 h-3 text-slate-400" />
+                    <span className="text-[11px] text-slate-300">
+                      {stream.viewerCount?.toLocaleString("es-ES") || 0}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </motion.aside>
+      )}
+    </AnimatePresence>
   );
 }

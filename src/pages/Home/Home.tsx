@@ -1,4 +1,3 @@
-// src/pages/Home/Home.tsx
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -12,6 +11,7 @@ import {
   UserPlus,
   ArrowRight,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import {
   getLiveStreams,
@@ -20,11 +20,17 @@ import {
   type Category,
 } from "../../services/api/streamService";
 import { safeLocale, safeNumber } from "../../utils/safeFormat";
+import { useAuth } from "../../context/AuthContext";
+import { api, API_ENDPOINTS } from "../../services/api/api.config";
 
 export default function Home() {
   const [liveStreams, setLiveStreams] = useState<Stream[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [startingStream, setStartingStream] = useState(false);
+
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const loadData = async () => {
@@ -46,6 +52,40 @@ export default function Home() {
 
     loadData();
   }, []);
+
+  // Handler para el botón "Comenzar a Streamear"
+  const handleStartStreaming = async () => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      setStartingStream(true);
+
+      const res = await api.post(API_ENDPOINTS.streams.start);
+      const data = res.data || {};
+      const streamId = data.id || data.stream?.id;
+
+      if (streamId) {
+        navigate(`/stream/${streamId}`);
+      } else {
+        // Si el backend aún no devuelve id, al menos vamos al dashboard
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      console.error("❌ Error al iniciar stream:", err);
+      // Fallback seguro
+      navigate("/dashboard");
+    } finally {
+      setStartingStream(false);
+    }
+  };
+
+  // Handler para "Ver Streams en Vivo"
+  const handleViewLive = () => {
+    navigate("/live");
+  };
 
   // Fallback si el backend no responde
   const fallbackStreams: Stream[] = [
@@ -156,17 +196,20 @@ export default function Home() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="group relative px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl font-semibold text-white shadow-lg shadow-purple-500/50 overflow-hidden"
+                  onClick={handleStartStreaming}
+                  disabled={startingStream}
+                  className="group relative px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl font-semibold text-white shadow-lg shadow-purple-500/50 overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <span className="relative z-10 flex items-center gap-2 justify-center">
                     <Play className="w-5 h-5" />
-                    Comenzar a Streamear
+                    {startingStream ? "Iniciando stream..." : "Comenzar a Streamear"}
                   </span>
                 </motion.button>
 
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  onClick={handleViewLive}
                   className="px-8 py-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl font-semibold text-white hover:bg-white/10 transition-all"
                 >
                   Ver Streams en Vivo
@@ -264,7 +307,10 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-3xl font-bold text-white">Canales en Vivo</h2>
-            <button className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white font-medium transition-all">
+            <button
+              onClick={handleViewLive}
+              className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white font-medium transition-all"
+            >
               Ver Todos
             </button>
           </div>
@@ -341,7 +387,10 @@ export default function Home() {
                       </span>
 
                       <div className="flex gap-2 mt-4">
-                        <button className="flex-1 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg font-semibold text-white text-sm">
+                        <button
+                          onClick={() => navigate(`/stream/${stream.id}`)}
+                          className="flex-1 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg font-semibold text-white text-sm"
+                        >
                           Ver Stream
                         </button>
                         <button className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg">

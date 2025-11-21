@@ -50,19 +50,23 @@ export const axiosConfig = {
 
 export const api = axios.create(axiosConfig);
 
-// REQUEST INTERCEPTOR
+/* -------------------------------------------------------
+   REQUEST INTERCEPTOR – AGREGA AUTOMÁTICAMENTE EL TOKEN
+   ------------------------------------------------------- */
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
+
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    const url = (config.url || "").replace(/\/+/, "/");
-    const base = (config.baseURL || API_BASE_URL).replace(/\/+$/, "");
+    // Normaliza la URL (elimina // duplicados)
+    if (config.url) {
+      config.url = config.url.replace(/\/{2,}/g, "/");
+    }
 
-    console.log("📤 Request:", config.method?.toUpperCase(), `${base}${url}`);
-
+    console.log("📤 Request:", config.method?.toUpperCase(), config.url);
     return config;
   },
   (error) => {
@@ -71,7 +75,9 @@ api.interceptors.request.use(
   }
 );
 
-// RESPONSE INTERCEPTOR
+/* -------------------------------------------------------
+   RESPONSE INTERCEPTOR – LIMPIA TOKEN SI EXPIRA
+   ------------------------------------------------------- */
 api.interceptors.response.use(
   (response) => {
     console.log("✅ Response:", response.status, response.config.url);
@@ -84,6 +90,7 @@ api.interceptors.response.use(
       url: error.config?.url,
     });
 
+    // Si el token expiró o no es válido → cerrar sesión
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
     }
