@@ -1,11 +1,13 @@
+// src/components/layout/Navbar.tsx
+
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 import {
   Search,
   Bell,
-  User,
+  User as UserIcon,
   Menu,
   Home,
   Tv,
@@ -21,6 +23,7 @@ import Avatar from "../common/Avatar";
 import { useAuth } from "../../context/AuthContext";
 import Sidebar from "./Sidebar";
 
+// Streams reales para notificaciones
 import {
   getLiveStreams,
   type Stream,
@@ -40,11 +43,14 @@ export default function Navbar() {
   const [userMenu, setUserMenu] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
-  const [notificationItems, setNotificationItems] = useState<NotificationItem[]>([]);
+  const [notificationItems, setNotificationItems] = useState<
+    NotificationItem[]
+  >([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
 
   const navigate = useNavigate();
-  const { user, isAuthenticated, signOut } = useAuth();
+  const location = useLocation();
+  const { user, isAuthenticated, loading, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -52,7 +58,14 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // 🔥 Cargar streams en vivo para notificaciones
+  // Cerrar menús cuando cambiamos de ruta
+  useEffect(() => {
+    setUserMenu(false);
+    setMobileMenu(false);
+    setNotificationsOpen(false);
+  }, [location.pathname]);
+
+  // Notificaciones: canales en vivo
   useEffect(() => {
     const loadNotifications = async () => {
       try {
@@ -69,7 +82,10 @@ export default function Navbar() {
 
         setNotificationItems(mapped);
       } catch (err) {
-        console.error("❌ Error cargando notificaciones:", err);
+        console.error(
+          "❌ Error cargando notificaciones (streams en vivo):",
+          err
+        );
         setNotificationItems([]);
       } finally {
         setLoadingNotifications(false);
@@ -81,7 +97,8 @@ export default function Navbar() {
 
   const handleLogout = () => {
     signOut();
-    navigate("/login");
+    setUserMenu(false);
+    navigate("/"); // 🔁 Siempre volvemos al Home
   };
 
   const navItems = [
@@ -90,6 +107,18 @@ export default function Navbar() {
     { icon: Gamepad2, label: "Categories", href: "/categories" },
     { icon: TrendingUp, label: "Trending", href: "/trending" },
   ];
+
+  // Nombre seguro (evita crash en .split)
+  const displayName =
+    user?.username ||
+    (user?.email ? user.email.split("@")[0] : "Usuario");
+
+  const displayHandle =
+    user?.username ||
+    (user?.email ? user.email.split("@")[0] : "user");
+
+  const showAuthButtons = !loading && !isAuthenticated;
+  const showUserAvatar = !loading && isAuthenticated && !!user;
 
   return (
     <>
@@ -105,7 +134,6 @@ export default function Navbar() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            
             {/* LEFT */}
             <div className="flex items-center space-x-4">
               <button
@@ -117,7 +145,9 @@ export default function Navbar() {
 
               <Link to="/" className="flex items-center space-x-2">
                 <Sparkles className="h-6 w-6 text-purple-500" />
-                <span className="text-xl font-bold text-white">streamora</span>
+                <span className="text-xl font-bold text-white">
+                  streamora
+                </span>
                 <span className="px-2 py-0.5 text-[10px] font-bold bg-white/10 text-white/60 rounded border border-white/20">
                   space
                 </span>
@@ -134,7 +164,6 @@ export default function Navbar() {
                 >
                   <item.icon className="h-5 w-5" />
                   <span>{item.label}</span>
-
                   {item.badge && (
                     <span className="absolute -top-1 -right-1 bg-purple-500 text-white text-xs px-1.5 py-0.5 rounded-full">
                       {item.badge}
@@ -146,7 +175,6 @@ export default function Navbar() {
 
             {/* RIGHT */}
             <div className="flex items-center space-x-4">
-
               {/* SEARCH */}
               <div className="hidden sm:block relative">
                 <input
@@ -160,7 +188,9 @@ export default function Navbar() {
               {/* NOTIFICATIONS */}
               <div className="relative">
                 <button
-                  onClick={() => setNotificationsOpen(!notificationsOpen)}
+                  onClick={() =>
+                    setNotificationsOpen((prev) => !prev)
+                  }
                   className="p-2 rounded-lg hover:bg-slate-800 text-slate-400"
                 >
                   <Bell className="h-5 w-5" />
@@ -185,11 +215,12 @@ export default function Navbar() {
                         )}
                       </div>
 
-                      {!loadingNotifications && notificationItems.length === 0 && (
-                        <div className="px-4 py-4 text-sm text-slate-400">
-                          No hay canales en vivo.
-                        </div>
-                      )}
+                      {!loadingNotifications &&
+                        notificationItems.length === 0 && (
+                          <div className="px-4 py-4 text-sm text-slate-400">
+                            No hay canales en vivo en este momento.
+                          </div>
+                        )}
 
                       {notificationItems.map((n) => (
                         <button
@@ -200,7 +231,11 @@ export default function Navbar() {
                           }}
                           className="w-full text-left px-4 py-3 flex items-center space-x-3 hover:bg-slate-700"
                         >
-                          <Avatar size="sm" alt={n.user} src={n.avatarUrl} />
+                          <Avatar
+                            size="sm"
+                            alt={n.user}
+                            src={n.avatarUrl}
+                          />
                           <div className="flex-1">
                             <p className="text-white text-sm">
                               <strong>{n.user}</strong>{" "}
@@ -212,9 +247,9 @@ export default function Navbar() {
                               {n.title}
                             </p>
                           </div>
-
                           <span className="text-xs text-purple-300 font-semibold">
-                            {n.viewerCount.toLocaleString("es-ES")} viewers
+                            {n.viewerCount.toLocaleString("es-ES")}{" "}
+                            viewers
                           </span>
                         </button>
                       ))}
@@ -223,8 +258,13 @@ export default function Navbar() {
                 </AnimatePresence>
               </div>
 
-              {/* AUTH / USER MENU */}
-              {!isAuthenticated ? (
+              {/* AUTH / USER */}
+              {loading && (
+                // Skeleton mientras comprobamos el token
+                <div className="w-24 h-8 rounded-lg bg-slate-800 animate-pulse" />
+              )}
+
+              {showAuthButtons && (
                 <>
                   <Link
                     to="/login"
@@ -232,7 +272,6 @@ export default function Navbar() {
                   >
                     Iniciar Sesión
                   </Link>
-
                   <Link
                     to="/register"
                     className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg"
@@ -240,10 +279,12 @@ export default function Navbar() {
                     Registrarse
                   </Link>
                 </>
-              ) : (
+              )}
+
+              {showUserAvatar && (
                 <div className="relative">
                   <button
-                    onClick={() => setUserMenu(!userMenu)}
+                    onClick={() => setUserMenu((prev) => !prev)}
                     className="p-2 rounded-lg hover:bg-slate-800"
                   >
                     {user?.avatarUrl ? (
@@ -253,7 +294,7 @@ export default function Navbar() {
                         className="w-8 h-8 rounded-full object-cover"
                       />
                     ) : (
-                      <User className="h-5 w-5 text-slate-400" />
+                      <UserIcon className="h-5 w-5 text-slate-400" />
                     )}
                   </button>
 
@@ -263,23 +304,18 @@ export default function Navbar() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        className="absolute right-0 mt-2 w-48 bg-slate-800 rounded-lg shadow-lg py-2 z-50"
+                        className="absolute right-0 mt-2 w-56 bg-slate-800 rounded-lg shadow-lg py-2 z-50"
                       >
-                        {/* USER INFO */}
+                        {/* HEADER USER */}
                         <div className="px-4 py-3 border-b border-slate-700">
                           <p className="text-sm font-semibold text-white">
-                            {user?.username || "Usuario"}
+                            {displayName}
                           </p>
-
                           <p className="text-xs text-slate-400">
-                            @{user?.username ||
-                              (user?.email
-                                ? user.email.split("@")[0]
-                                : "Usuario")}
+                            @{displayHandle}
                           </p>
                         </div>
 
-                        {/* DASHBOARD */}
                         <Link
                           to="/dashboard"
                           className="block px-4 py-2 text-sm text-white hover:bg-slate-700"
@@ -288,7 +324,6 @@ export default function Navbar() {
                           Dashboard
                         </Link>
 
-                        {/* SETTINGS */}
                         <Link
                           to="/settings"
                           className="block px-4 py-2 text-sm text-white hover:bg-slate-700"
@@ -297,7 +332,6 @@ export default function Navbar() {
                           Configuración
                         </Link>
 
-                        {/* LOGOUT */}
                         <button
                           onClick={handleLogout}
                           className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-slate-700"

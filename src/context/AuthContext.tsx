@@ -1,7 +1,13 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 import { api } from "../services/api/api.config";
 
-interface User {
+export interface User {
   id: string;
   username: string;
   email: string;
@@ -14,63 +20,83 @@ interface AuthContextData {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextData>(
   {} as AuthContextData
 );
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Cargar usuario si existe token
-  useEffect(() => {
-    const loadUser = async () => {
-      const token = localStorage.getItem("token");
+  // ============================================
+  // Cargar usuario si hay token al montar
+  // ============================================
+  const refreshUser = async () => {
+    const token = localStorage.getItem("token");
 
-      if (!token) {
-        setLoading(false);
-        return;
-      }
+    if (!token) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
 
-      try {
-        const response = await api.get("/api/auth/me");
-
-        // Para compatibilidad si backend envía { user: {...} }
-        const data = response.data.user || response.data;
-
-        setUser(data);
-      } catch (error) {
-        console.error("❌ Error cargando usuario:", error);
-        localStorage.removeItem("token");
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadUser();
-  }, []);
-
-  const signIn = async (email: string, password: string) => {
     try {
-      const res = await api.post("/api/auth/login", { email, password });
-
-      const token = res.data.token;
-      const userData = res.data.user || res.data;
-
-      localStorage.setItem("token", token);
-      setUser(userData);
+      const response = await api.get("/api/auth/me");
+      // algunos backends envían { user: {...} }, otros solo el usuario
+      const data = (response.data as any).user || response.data;
+      setUser(data);
     } catch (error) {
+      console.error("❌ Error cargando /api/auth/me:", error);
+      // Token inválido → sesión limpia (evita “sesiones zombie”)
       localStorage.removeItem("token");
       setUser(null);
-      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    refreshUser();
+  }, []);
+
+  // ============================================
+  // LOGIN
+  // ============================================
+  const signIn = async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      const res = await api.post("/api/auth/login", { email, password });
+
+      const { token, user: loginUser } = res.data || {};
+
+      if (token) {
+        localStorage.setItem("token", token);
+      }
+
+      // Preferimos el user devuelto; si no, volvemos a pedir /me
+      if (loginUser) {
+        setUser(loginUser);
+      } else {
+        await refreshUser();
+      }
+    } catch (error) {
+      console.error("❌ Error en login:", error);
+      localStorage.removeItem("token");
+      setUser(null);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ============================================
+  // LOGOUT
+  // ============================================
   const signOut = () => {
     localStorage.removeItem("token");
     setUser(null);
@@ -84,6 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         loading,
         signIn,
         signOut,
+        refreshUser,
       }}
     >
       {children}
