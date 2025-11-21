@@ -2,6 +2,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
+import { api, API_ENDPOINTS } from "../../services/api/api.config";
+import { getCategories, type Category } from "../../services/api/streamService";
+
 import {
   Radio,
   Eye,
@@ -10,29 +13,26 @@ import {
   MonitorPlay,
   Copy,
   CheckCircle,
-  Video,
 } from "lucide-react";
 
-import { api, API_ENDPOINTS } from "../../services/api/api.config";
-import { getCategories, type Category } from "../../services/api/streamService";
-
-// INTERFAZ DEL STREAM
 interface StreamData {
   id: string;
   title: string;
+  description?: string;
   categoryId?: string;
   category?: string;
   thumbnailUrl?: string;
   isLive?: boolean;
   viewerCount?: number;
-  rtmpUrl: string; // no se usa con vdo.ninja, pero se deja para compatibilidad
-  streamKey: string;
+
+  // Si luego quieren usar video real
+  streamUrl?: string;
 }
 
 export default function LiveDashboard() {
   const { streamId } = useParams();
-
   const [stream, setStream] = useState<StreamData | null>(null);
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
@@ -44,7 +44,7 @@ export default function LiveDashboard() {
   const [copied, setCopied] = useState<string | null>(null);
 
   // ============================================================
-  // CARGAR DATOS DEL STREAM
+  // Cargar datos
   // ============================================================
   useEffect(() => {
     const load = async () => {
@@ -59,13 +59,13 @@ export default function LiveDashboard() {
         const formatted: StreamData = {
           id: s.id,
           title: s.title,
+          description: s.description,
           categoryId: s.categoryId,
           category: s.category?.name,
           thumbnailUrl: s.thumbnailUrl,
           isLive: s.isLive,
           viewerCount: s.viewerCount,
-          rtmpUrl: s.rtmpUrl,
-          streamKey: s.streamKey,
+          streamUrl: s.streamUrl,
         };
 
         setStream(formatted);
@@ -74,7 +74,7 @@ export default function LiveDashboard() {
         setThumbPreview(formatted.thumbnailUrl || null);
         setCategories(cats);
       } catch {
-        console.error("Error cargando stream");
+        console.log("Error cargando panel");
       } finally {
         setLoading(false);
       }
@@ -84,7 +84,7 @@ export default function LiveDashboard() {
   }, [streamId]);
 
   // ============================================================
-  // COPIAR TEXTO
+  // Copy helper
   // ============================================================
   const copyValue = (value: string, key: string) => {
     navigator.clipboard.writeText(value);
@@ -93,7 +93,7 @@ export default function LiveDashboard() {
   };
 
   // ============================================================
-  // GUARDAR CONFIGURACIÓN
+  // Guardar config
   // ============================================================
   const save = async () => {
     if (!stream) return;
@@ -111,18 +111,15 @@ export default function LiveDashboard() {
         title,
         categoryId: category,
         category:
-          categories.find((c) => c.id === category)?.name ||
+          categories.find((c) => c.id === category)?.name ??
           stream.category,
       });
-    } catch {
-      console.error("Error guardando configuración");
-    }
-
+    } catch {}
     setSaving(false);
   };
 
   // ============================================================
-  // INICIAR / DETENER DIRECTO
+  // Iniciar/Detener stream
   // ============================================================
   const toggleLive = async () => {
     if (!stream) return;
@@ -137,17 +134,18 @@ export default function LiveDashboard() {
         await api.post(API_ENDPOINTS.streams.start, { streamId });
         setStream({ ...stream, isLive: true });
       }
-    } catch {
-      console.error("Error iniciando / deteniendo stream");
-    }
+    } catch {}
 
     setLiveLoading(false);
   };
 
+  // ============================================================
+  // UI
+  // ============================================================
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
-        Cargando panel...
+        Cargando panel…
       </div>
     );
   }
@@ -160,11 +158,8 @@ export default function LiveDashboard() {
     );
   }
 
-  // ============================================================
-  // UI PRINCIPAL
-  // ============================================================
   return (
-    <div className="min-h-screen bg-slate-950 text-white px-4 py-10 max-w-6xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-950 text-white px-4 py-10 max-w-6xl mx-auto space-y-10">
 
       {/* HEADER */}
       <div className="flex items-center justify-between">
@@ -185,27 +180,27 @@ export default function LiveDashboard() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
 
-        {/* ================== PREVIEW ================== */}
+        {/* PREVIEW */}
         <div className="lg:col-span-2 bg-slate-900 rounded-xl border border-white/10 p-4">
           <h2 className="flex items-center gap-2 text-slate-300 mb-2 text-sm">
             <MonitorPlay className="w-4 h-4" />
-            Vista previa del stream (VDO.Ninja)
+            Vista previa del stream
           </h2>
 
           <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-white/10">
-            {stream.isLive ? (
-              <iframe
-                src={`https://vdo.ninja/?view=${stream.id}&cleanoutput&autostart`}
-                width="100%"
-                height="100%"
-                allow="camera; microphone; fullscreen"
-                className="w-full h-full"
-              ></iframe>
+            {stream.streamUrl ? (
+              <video
+                src={stream.streamUrl}
+                className="w-full h-full object-cover"
+                controls
+                autoPlay
+                muted
+              />
             ) : (
-              <div className="text-center text-slate-400 flex items-center justify-center w-full h-full">
-                Stream offline — inicia la transmisión desde OBS.
+              <div className="w-full h-full flex items-center justify-center text-slate-500">
+                Esperando señal…
               </div>
             )}
           </div>
@@ -216,57 +211,19 @@ export default function LiveDashboard() {
           </div>
         </div>
 
-        {/* ================== CONFIG ================== */}
+        {/* CONFIG */}
         <div className="space-y-4">
 
-          {/* VDO.NINJA LINKS */}
-          <div className="bg-slate-900 p-4 rounded-xl border border-white/10 space-y-3">
+          {/* RTMP (si lo usan) */}
+          <div className="bg-slate-900 p-4 rounded-xl border border-white/10 space-y-4">
             <h2 className="text-sm flex items-center gap-2 text-slate-300">
-              <Video className="w-4 h-4" /> Enlaces VDO.Ninja
+              <Radio className="w-4 h-4" /> Configuración de emisión
             </h2>
 
-            {/* PUSH LINK */}
             <div>
-              <p className="text-xs text-slate-500 mb-1">Enlace para OBS (Push)</p>
-              <div className="bg-slate-800 px-3 py-2 rounded-lg flex items-center justify-between">
-                <span className="text-purple-300 text-xs select-none">
-                  {`https://vdo.ninja/?push=${stream.id}`}
-                </span>
-                <button
-                  onClick={() =>
-                    copyValue(`https://vdo.ninja/?push=${stream.id}`, "push")
-                  }
-                >
-                  {copied === "push" ? (
-                    <CheckCircle className="w-4 h-4 text-green-400" />
-                  ) : (
-                    <Copy className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* VIEW LINK */}
-            <div>
-              <p className="text-xs text-slate-500 mb-1">Enlace para ver directo</p>
-              <div className="bg-slate-800 px-3 py-2 rounded-lg flex items-center justify-between">
-                <span className="text-purple-300 text-xs select-none">
-                  {`https://vdo.ninja/?view=${stream.id}&cleanoutput&autostart`}
-                </span>
-                <button
-                  onClick={() =>
-                    copyValue(
-                      `https://vdo.ninja/?view=${stream.id}&cleanoutput&autostart`,
-                      "view"
-                    )
-                  }
-                >
-                  {copied === "view" ? (
-                    <CheckCircle className="w-4 h-4 text-green-400" />
-                  ) : (
-                    <Copy className="w-4 h-4" />
-                  )}
-                </button>
+              <p className="text-xs text-slate-500 mb-1">RTMP (si aplica)</p>
+              <div className="bg-slate-800 px-3 py-2 rounded-lg text-xs text-slate-300">
+                {stream.id ? `rtmp://server/live/${stream.id}` : "RTMP no configurado"}
               </div>
             </div>
           </div>
@@ -308,15 +265,14 @@ export default function LiveDashboard() {
             <div>
               <p className="text-xs text-slate-500 mb-1">Thumbnail</p>
               <button
-                className="flex items-center gap-2 bg-slate-800 px-3 py-2 rounded-lg"
                 onClick={() => setThumbPreview(null)}
+                className="flex items-center gap-2 bg-slate-800 px-3 py-2 rounded-lg"
               >
                 <ImageIcon className="w-4 h-4" />
-                Generar nuevo thumbnail (placeholder)
+                Generar nuevo thumbnail
               </button>
             </div>
 
-            {/* Save */}
             <button
               onClick={save}
               disabled={saving}
@@ -326,6 +282,7 @@ export default function LiveDashboard() {
             </button>
           </div>
         </div>
+
       </div>
     </div>
   );

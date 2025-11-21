@@ -1,52 +1,78 @@
+// src/pages/Clips/ClipPage.tsx
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { ClipType } from "../../types/clip.types";
 import { api } from "../../services/api/api.config";
 import { safeLocale } from "../../utils/safeFormat";
 
-interface Clip {
-  id: string;
-  title: string;
-  url: string;
-  views: number;
-  streamer: { username: string; avatarUrl?: string };
-}
-
 export default function ClipPage() {
   const { id } = useParams();
-  const [clip, setClip] = useState<Clip | null>(null);
+
+  const [clip, setClip] = useState<ClipType | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get(`/api/clips/${id}`).then((res) => {
-      setClip(res.data);
-      setLoading(false);
-    });
+    const load = async () => {
+      try {
+        const res = await api.get(`/api/clips/${id}`);
+        setClip(res.data);
+      } catch (err) {
+        console.log("Error cargando clip:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
   }, [id]);
 
-  if (loading) return <p className="text-white">Cargando...</p>;
-  if (!clip) return <p className="text-red-500">Clip no encontrado</p>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <p className="text-white">Cargando…</p>
+      </div>
+    );
+  }
+
+  if (!clip) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <p className="text-red-400">Clip no encontrado</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-950 pt-20">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-slate-950 pt-20 px-6">
+      <div className="max-w-4xl mx-auto">
         <h1 className="text-white text-3xl font-bold mb-6">{clip.title}</h1>
 
-        <video controls src={clip.url} className="w-full rounded-xl" />
+        <video
+          src={clip.url}
+          controls
+          className="w-full rounded-xl bg-black border border-white/10 shadow-xl"
+        />
 
-        <div className="mt-4 flex gap-4">
+        <div className="mt-6 flex items-center gap-4">
           <img
-            src={clip.streamer.avatarUrl}
-            className="w-16 h-16 rounded-full border border-purple-500"
+            src={
+              clip.streamer?.avatarUrl ||
+              "https://ui-avatars.com/api/?background=6d28d9&color=ffffff"
+            }
+            className="w-14 h-14 rounded-full border-2 border-purple-500"
           />
+
           <div>
-            <p className="text-slate-400 text-sm">Streamer</p>
-            <p className="text-white font-bold text-xl">
+            <p className="text-slate-300 text-sm">Subido por</p>
+            <p className="text-white text-xl font-bold">
               {clip.streamer.username}
             </p>
           </div>
         </div>
 
-        <p className="text-slate-400 mt-3">{safeLocale(clip.views)} vistas</p>
+        <p className="mt-4 text-slate-400">
+          {safeLocale(clip.views)} vistas
+        </p>
       </div>
     </div>
   );

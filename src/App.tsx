@@ -1,13 +1,12 @@
 // src/App.tsx
 import { Routes, Route } from "react-router-dom";
 
+// NAVBAR
 import Navbar from "./components/layout/Navbar";
 
 // Páginas principales
 import Home from "./pages/Home/Home";
-import StreamPage from "./pages/Stream/Stream";
-
-// Listado general de contenido (Live = Clips en tu versión)
+import StreamPage from "./pages/Stream/Stream"; 
 import LivePage from "./pages/Live/Live";
 
 // Clips
@@ -32,28 +31,24 @@ export default function App() {
       <Navbar />
 
       <Routes>
+
         {/* HOME */}
         <Route path="/" element={<Home />} />
 
-        {/* STREAM EN VIVO */}
+        {/* STREAM + CLIP */}
         <Route path="/stream/:id" element={<StreamPage />} />
-
-        {/* CLIPS */}
-        <Route path="/clips" element={<ClipsPage />} />
         <Route path="/clip/:id" element={<ClipPage />} />
+
+        {/* LISTA DE CLIPS */}
+        <Route path="/live" element={<LivePage />} />
+        <Route path="/clips" element={<ClipsPage />} />
 
         {/* SUBIR CLIP */}
         <Route path="/clips/upload" element={<UploadClip />} />
 
-        {/* LISTADO DE CONTENIDO (ANTES LIVE STREAMS) */}
-        <Route path="/live" element={<LivePage />} />
-
         {/* DASHBOARD */}
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route
-          path="/dashboard/live/:streamId"
-          element={<LiveDashboard />}
-        />
+        <Route path="/dashboard/live/:streamId" element={<LiveDashboard />} />
 
         {/* AUTH */}
         <Route path="/login" element={<Login />} />

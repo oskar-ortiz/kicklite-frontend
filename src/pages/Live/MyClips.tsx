@@ -1,32 +1,49 @@
+// src/pages/Live/MyClips.tsx
 import { useEffect, useState } from "react";
-import { useAuth } from "../../context/AuthContext";
-import { getClipsByUser } from "../../services/api/clipService";
-import ClipCard, { ClipType } from "../../components/clips/ClipCard";
+import { api } from "../../services/api/api.config";
+import ClipCard from "../../components/clips/ClipCard";
+import { ClipType } from "../../types/clip.types";
+import { useNavigate } from "react-router-dom";
 
 export default function MyClips() {
-  const { user } = useAuth();
   const [clips, setClips] = useState<ClipType[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user) return;
-    getClipsByUser(user.id).then(setClips);
-  }, [user]);
+    const load = async () => {
+      try {
+        const res = await api.get("/api/clips/my");
+        setClips(res.data || []);
+      } catch (err) {
+        console.log("Error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 pt-20">
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-white mb-6">Mis Clips</h1>
+    <div className="min-h-screen bg-slate-950 pt-20 px-6">
+      <h1 className="text-white text-3xl font-bold mb-6">Mis Clips</h1>
 
-        {clips.length === 0 ? (
-          <p className="text-slate-400">No has subido clips todavía.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {clips.map((clip) => (
-              <ClipCard key={clip.id} clip={clip} onClick={() => {}} />
-            ))}
-          </div>
-        )}
-      </div>
+      {loading ? (
+        <p className="text-slate-400">Cargando…</p>
+      ) : clips.length === 0 ? (
+        <p className="text-slate-400">No has subido clips aún.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {clips.map((clip) => (
+            <ClipCard
+              key={clip.id}
+              clip={clip}
+              onClick={() => navigate(`/clip/${clip.id}`)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

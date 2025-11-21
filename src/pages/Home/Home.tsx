@@ -1,52 +1,34 @@
 // src/pages/Home/Home.tsx
+
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Play, Sparkles, Users, Radio } from "lucide-react";
+import { Play, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-import HlsPlayer from "../../components/player/HlsPlayer";
 import { useAuth } from "../../context/AuthContext";
-
 import { api, API_ENDPOINTS } from "../../services/api/api.config";
 
+// Clips
 import { getAllClips } from "../../services/api/clipService";
 import ClipCard, { ClipType } from "../../components/clips/ClipCard";
 
-// =====================
-// MOCK para stream en vivo
-// Tu backend luego lo reemplaza
-// =====================
-
-interface LiveStreamMock {
-  id: string;
-  username: string;
-  title: string;
-  streamUrl: string; // URL HLS (fake)
-  viewerCount: number;
-  thumbnailUrl?: string;
-}
-
 export default function Home() {
-  const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
-
-  // Clips
   const [clips, setClips] = useState<ClipType[]>([]);
   const [loadingClips, setLoadingClips] = useState(true);
 
-  // Stream en vivo (mock hasta que tu backend lo dé real)
-  const [liveStream, setLiveStream] = useState<LiveStreamMock | null>(null);
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   const [startingStream, setStartingStream] = useState(false);
 
-  // ===========================
-  // 1. Cargar Clips
-  // ===========================
+  // ================================
+  // Cargar Clips
+  // ================================
   useEffect(() => {
     const loadClips = async () => {
       try {
-        const data: any = await getAllClips();
-        setClips(data || []);
+        const res = await getAllClips();
+        setClips(res || []);
       } catch (err) {
         console.error("Error cargando clips:", err);
       } finally {
@@ -57,157 +39,166 @@ export default function Home() {
     loadClips();
   }, []);
 
-  // ===========================
-  // 2. Cargar Stream en Vivo (fake temporal)
-  // ===========================
-  useEffect(() => {
-    // Tu compañero sustituirá esto por:
-    // const stream = await api.get("/api/streams/live");
-    setLiveStream({
-      id: "stream123",
-      username: "Oskkiii",
-      title: "EN VIVO AHORA MISMO",
-      streamUrl:
-        "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8", // DEMO HLS
-      viewerCount: 21,
-      thumbnailUrl:
-        "https://i.pinimg.com/originals/8d/a0/6a/8da06af7ce4a15a43b44e07039e89165.jpg",
-    });
-  }, []);
-
-  // ===========================
-  // 3. Handler para iniciar stream
-  // ===========================
+  // ================================
+  // Crear Stream
+  // ================================
   const handleStartStreaming = async () => {
     if (!isAuthenticated) return navigate("/login");
 
     try {
       setStartingStream(true);
+
       const res = await api.post(API_ENDPOINTS.streams.start);
+
       const id = res.data?.id || res.data?.stream?.id;
-      if (id) navigate(`/stream/${id}`);
+      if (id) navigate(`/dashboard/live/${id}`);
       else navigate("/dashboard");
-    } catch (err) {
+    } catch (error) {
+      console.error("❌ Error creando stream:", error);
       navigate("/dashboard");
     } finally {
       setStartingStream(false);
     }
   };
 
-  // ===========================
-  // 4. UI
-  // ===========================
+  const handleViewClips = () => navigate("/live");
+
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      {/* =============================================== */}
-      {/* HERO + PREVIEW DEL STREAM */}
-      {/* =============================================== */}
-      <section className="pt-20 container mx-auto px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+    <div className="min-h-screen bg-slate-950">
 
-          {/* ==== TEXTO ==== */}
-          <div className="flex flex-col justify-center">
-            <div className="inline-flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 px-4 py-2 rounded-full mb-4 w-fit">
-              <Sparkles className="w-4 h-4 text-purple-300" />
-              <span className="text-sm text-purple-300">
-                #1 Plataforma para Streamers
-              </span>
-            </div>
+      {/* ================================= */}
+      {/*             HERO                  */}
+      {/* ================================= */}
+      <motion.section
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="relative min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 overflow-hidden "
+      >
+        {/* FONDO ANIMADO */}
+        <div className="absolute inset-0 pointer-events-none">
+          <motion.div
+            animate={{ opacity: [0.3, 0.5, 0.3], scale: [1, 1.2, 1] }}
+            transition={{ duration: 8, repeat: Infinity }}
+            className="absolute top-1/4 -left-24 w-96 h-96 bg-purple-600 rounded-full blur-3xl"
+          />
 
-            <h1 className="text-5xl md:text-6xl font-bold mb-4 leading-tight">
-              <span className="text-white">streamora</span>
-              <span className="text-white/40">.space</span>
-            </h1>
+          <motion.div
+            animate={{ opacity: [0.2, 0.4, 0.2], scale: [1.1, 1, 1.1] }}
+            transition={{ duration: 10, repeat: Infinity }}
+            className="absolute bottom-1/4 -right-24 w-96 h-96 bg-blue-500 rounded-full blur-3xl"
+          />
+        </div>
 
-            <p className="text-lg text-slate-300 mb-8">
-              Comparte tus mejores momentos o transmite en vivo a tu comunidad.
-            </p>
+        {/* CONTENIDO HERO */}
+        <div className="relative z-10 container mx-auto px-6 py-24">
+          <div className="flex flex-col lg:flex-row items-center gap-14">
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={handleStartStreaming}
-                disabled={startingStream}
-                className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl text-white font-semibold"
+            {/* TEXTO PRINCIPAL */}
+            <motion.div
+              initial={{ opacity: 0, x: -40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7 }}
+              className="flex-1 text-center lg:text-left"
+            >
+              {/* Badge */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-400/20 backdrop-blur-sm mb-6"
               >
-                {startingStream ? "Iniciando..." : "Comenzar Stream"}
-              </button>
+                <Sparkles className="w-4 h-4 text-purple-400" />
+                <span className="text-sm text-purple-300">
+                  Plataforma para Streamers
+                </span>
+              </motion.div>
 
-              <button
-                onClick={() => navigate("/live")}
-                className="px-8 py-4 bg-white/5 border border-white/10 rounded-xl"
-              >
-                Ver Clips
-              </button>
-            </div>
+              {/* Título */}
+              <h1 className="text-5xl md:text-7xl font-black text-white leading-tight mb-6">
+                streamora<span className="text-purple-400">.space</span>
+                <br />
+                <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  Stream. Crea. Conecta.
+                </span>
+              </h1>
 
-            <div className="mt-8 flex gap-8">
-              <div>
-                <p className="text-3xl font-bold">{clips.length}</p>
-                <p className="text-slate-400 text-sm">Clips subidos</p>
+              <p className="text-lg md:text-xl text-slate-300 mb-10 max-w-xl">
+                Comparte tus mejores momentos o transmite en vivo con estilo.
+              </p>
+
+              {/* BOTONES */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                {/* Empezar stream */}
+                <button
+                  onClick={handleStartStreaming}
+                  disabled={startingStream}
+                  className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl font-semibold text-white shadow-lg hover:opacity-90 transition"
+                >
+                  {startingStream ? "Iniciando..." : "Comenzar stream"}
+                </button>
+
+                {/* Ver clips */}
+                <button
+                  onClick={handleViewClips}
+                  className="px-8 py-4 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl text-white font-semibold hover:bg-white/10 transition"
+                >
+                  Ver clips
+                </button>
               </div>
-              <div>
-                <p className="text-3xl font-bold">{liveStream ? 1 : 0}</p>
-                <p className="text-slate-400 text-sm">Streams activos</p>
-              </div>
-            </div>
-          </div>
+            </motion.div>
 
-          {/* ==== PREVIEW DEL STREAM ==== */}
-          <div className="relative bg-slate-900 border border-white/10 rounded-xl overflow-hidden shadow-xl">
-            {liveStream ? (
-              <>
+            {/* VIDEO DE PREVIEW */}
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="flex-1 max-w-2xl w-full"
+            >
+              <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-xl">
+                <video
+                  src="https://samplelib.com/lib/preview/mp4/sample-1m.mp4"
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  loop
+                  muted
+                ></video>
 
-                {/* Player silencioso estilo Kick */}
-                <HlsPlayer
-                  src={liveStream.streamUrl}
-                  autoPlay={true}
-                  muted={true}
-                  controls={false}
-                  className="w-full h-full aspect-video object-cover"
-                />
-
-                {/* Overlay */}
-                <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-600 px-3 py-1 rounded-lg">
-                  <Radio className="w-3 h-3 animate-pulse" />
-                  <span className="text-xs font-semibold">EN VIVO</span>
+                {/* Overlay Play */}
+                <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
+                  <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
+                    <Play className="w-10 h-10 text-white ml-1" />
+                  </div>
                 </div>
-
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-                  <p className="text-lg font-bold">{liveStream.title}</p>
-                  <p className="text-sm text-slate-300">@{liveStream.username}</p>
-                </div>
-
-              </>
-            ) : (
-              <div className="aspect-video flex items-center justify-center bg-slate-800 text-slate-400">
-                No hay streams activos
               </div>
-            )}
+            </motion.div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      {/* =============================================== */}
-      {/* GRID DE CLIPS */}
-      {/* =============================================== */}
-      <section className="py-20 container mx-auto px-4">
-        <h2 className="text-3xl font-bold mb-6">Clips del Canal</h2>
+      {/* ================================= */}
+      {/*            GRID DE CLIPS          */}
+      {/* ================================= */}
+      <section className="py-16 bg-slate-950">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-white mb-6">Clips recientes</h2>
 
-        {loadingClips ? (
-          <p className="text-slate-400">Cargando clips...</p>
-        ) : clips.length === 0 ? (
-          <p className="text-slate-400">No hay clips todavía.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {clips.slice(0, 6).map((clip) => (
-              <ClipCard
-                key={clip.id}
-                clip={clip}
-                onClick={() => navigate(`/clip/${clip.id}`)}
-              />
-            ))}
-          </div>
-        )}
+          {loadingClips ? (
+            <p className="text-slate-400">Cargando clips...</p>
+          ) : clips.length === 0 ? (
+            <p className="text-slate-400">No hay clips disponibles.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {clips.slice(0, 6).map((clip) => (
+                <ClipCard
+                  key={clip.id}
+                  clip={clip}
+                  onClick={() => navigate(`/clip/${clip.id}`)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );

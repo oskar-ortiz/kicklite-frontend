@@ -1,8 +1,6 @@
 // src/pages/Stream/Stream.tsx
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-
-import Hls from "hls.js";
 
 import { api } from "../../services/api/api.config";
 import LiveChat from "../../components/stream/LiveChat";
@@ -20,18 +18,18 @@ interface Clip {
     avatarUrl?: string;
   };
   views: number;
-  createdAt?: string;
 }
 
 interface Stream {
   id: string;
   title: string;
+  description?: string;
   thumbnailUrl?: string;
   viewerCount?: number;
   isLive?: boolean;
-  description?: string;
 
-  streamUrl?: string; // 👈 AÑADIDO (m3u8)
+  // Si el backend manda streamUrl = video de stream (mp4)
+  streamUrl?: string;
 
   streamer?: {
     id: string;
@@ -50,22 +48,13 @@ export default function StreamPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-
-  // ================================================================
-  // 🔥 Cargar datos → Detectar STREAM o CLIP
-  // ================================================================
+  // ============================================================
+  // Cargar contenido automáticamente
+  // ============================================================
   useEffect(() => {
     const load = async () => {
-      if (!id) {
-        setError("ID inválido");
-        setLoading(false);
-        return;
-      }
-
       try {
         const s = await api.get(`/api/streams/${id}`).catch(() => null);
-
         if (s?.data) {
           setStream(s.data);
           setLoading(false);
@@ -73,16 +62,16 @@ export default function StreamPage() {
         }
 
         const c = await api.get(`/api/clips/${id}`).catch(() => null);
-
         if (c?.data) {
           setClip(c.data);
           setLoading(false);
           return;
         }
 
-        setError("No se encontró contenido");
+        setError("No se encontró contenido.");
       } catch (err) {
-        setError("No se pudo cargar el contenido");
+        console.error(err);
+        setError("Error al cargar contenido.");
       } finally {
         setLoading(false);
       }
@@ -91,28 +80,9 @@ export default function StreamPage() {
     load();
   }, [id]);
 
-  // ================================================================
-  // 🔴 STREAM → HLS PLAYER
-  // ================================================================
-  useEffect(() => {
-    if (!stream?.streamUrl || !videoRef.current) return;
-
-    if (Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(stream.streamUrl);
-      hls.attachMedia(videoRef.current);
-
-      return () => hls.destroy();
-    } else if (
-      videoRef.current.canPlayType("application/vnd.apple.mpegurl")
-    ) {
-      videoRef.current.src = stream.streamUrl;
-    }
-  }, [stream?.streamUrl]);
-
-  // ================================================================
-  // 🔴 STREAM → Viewers real-time
-  // ================================================================
+  // ============================================================
+  // Viewers realtime (solo stream)
+  // ============================================================
   useEffect(() => {
     if (!id || !stream) return;
 
@@ -130,13 +100,13 @@ export default function StreamPage() {
     };
   }, [id, stream]);
 
-  // ================================================================
+  // ============================================================
   // LOADING / ERROR
-  // ================================================================
+  // ============================================================
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <p className="text-white">Cargando...</p>
+        <p className="text-white">Cargando contenido…</p>
       </div>
     );
   }
@@ -144,35 +114,57 @@ export default function StreamPage() {
   if (error || (!stream && !clip)) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <p className="text-red-500">{error}</p>
+        <p className="text-red-400 text-xl">{error}</p>
       </div>
     );
   }
 
-  // ================================================================
-  // 🔥 CLIP (MP4)
-  // ================================================================
+  // ============================================================
+  //  🔥 CLIP (VIDEO MP4)
+  // ============================================================
   if (clip) {
     return (
       <div className="min-h-screen bg-slate-950 pt-20">
-        <div className="container mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="container mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* VIDEO */}
           <div className="lg:col-span-2">
-            <h1 className="text-3xl font-bold text-white mb-4">
-              {clip.title}
-            </h1>
+            <h1 className="text-3xl font-bold text-white mb-4">{clip.title}</h1>
 
             <video
-              controls
               src={clip.url}
-              className="w-full rounded-xl bg-black border border-slate-800"
+              controls
+              className="w-full rounded-xl border border-white/10 bg-black shadow-xl"
             />
+
+            {/* INFO */}
+            <div className="mt-6 flex items-center gap-4">
+              <img
+                src={
+                  clip.streamer?.avatarUrl ||
+                  "https://ui-avatars.com/api/?background=6d28d9&color=fff&name=*"
+                }
+                className="w-16 h-16 rounded-full border-2 border-purple-600"
+              />
+
+              <div>
+                <p className="text-slate-400 text-sm">Subido por</p>
+                <p className="text-white text-xl font-bold">
+                  {clip.streamer?.username}
+                </p>
+              </div>
+            </div>
+
+            <p className="mt-4 text-slate-400">
+              {safeLocale(clip.views)} vistas
+            </p>
           </div>
 
+          {/* CHAT DISABLED */}
           <div className="lg:col-span-1">
-            <div className="bg-slate-900 p-6 rounded-xl border border-slate-800">
-              <h2 className="text-lg text-white">Comentarios</h2>
+            <div className="bg-slate-900 border border-white/10 rounded-xl p-6">
+              <h2 className="text-white text-lg font-bold mb-2">Comentarios</h2>
               <p className="text-slate-400 text-sm">
-                Los clips no tienen chat
+                Los clips no tienen chat en vivo.
               </p>
             </div>
           </div>
@@ -181,33 +173,47 @@ export default function StreamPage() {
     );
   }
 
-  // ================================================================
-  // 🔥 STREAM EN VIVO (HLS + CHAT)
-  // ================================================================
-  const viewerCountToShow =
+  // ============================================================
+  //  🔥 STREAM EN VIVO
+  // ============================================================
+  const viewerCountShow =
     liveViewers !== null ? liveViewers : stream?.viewerCount ?? 0;
 
   return (
     <div className="min-h-screen bg-slate-950 pt-20">
-      <div className="container mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* PLAYER */}
+      <div className="container mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* VIDEO PLAYER */}
         <div className="lg:col-span-2">
           <h1 className="text-3xl font-bold text-white mb-4">
             {stream?.title}
           </h1>
 
-          <div className="relative aspect-video bg-black rounded-xl overflow-hidden border border-white/10">
-            <video
-              ref={videoRef}
-              className="w-full h-full object-cover"
-              autoPlay
-              controls
-            />
+          <div className="relative aspect-video bg-black rounded-xl border border-white/10 overflow-hidden shadow-xl">
+            {stream?.streamUrl ? (
+              <video
+                src={stream.streamUrl}
+                className="w-full h-full object-cover"
+                controls
+                autoPlay
+              />
+            ) : (
+              <img
+                src={
+                  stream?.thumbnailUrl ||
+                  "https://via.placeholder.com/1280x720?text=Esperando+stream"
+                }
+                className="w-full h-full object-cover opacity-80"
+              />
+            )}
           </div>
 
           <p className="mt-4 text-slate-400">
-            {safeLocale(viewerCountToShow)} espectadores
+            🔴 {safeLocale(viewerCountShow)} espectadores
+          </p>
+
+          <p className="mt-4 text-slate-300">
+            {stream?.description || "Sin descripción."}
           </p>
         </div>
 
@@ -215,7 +221,6 @@ export default function StreamPage() {
         <div className="lg:col-span-1">
           <LiveChat streamId={id!} />
         </div>
-
       </div>
     </div>
   );

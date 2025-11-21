@@ -1,11 +1,12 @@
 // src/components/layout/Navbar.tsx
+
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { Menu, LogOut, Tv, Video, PlusCircle } from "lucide-react";
+import { Menu, LogOut, PlusCircle, Tv, Video } from "lucide-react";
 import { useState } from "react";
 
 export default function Navbar() {
-  const { user, signOut } = useAuth(); // ← CAMBIO AQUÍ
+  const { user, signOut } = useAuth(); // corregido: signOut()
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -20,8 +21,9 @@ export default function Navbar() {
 
         {/* DESKTOP MENU */}
         <div className="hidden md:flex items-center gap-6">
+          
           <Link to="/live" className="text-slate-300 hover:text-white transition">
-            Ver Clips
+            Ver clips
           </Link>
 
           {user && (
@@ -31,7 +33,7 @@ export default function Navbar() {
                 className="flex items-center gap-2 text-slate-300 hover:text-white transition"
               >
                 <PlusCircle className="w-4 h-4" />
-                Subir Clip
+                Subir clip
               </Link>
 
               <Link
@@ -49,6 +51,7 @@ export default function Navbar() {
               <Link to="/login" className="text-purple-400 font-semibold">
                 Iniciar sesión
               </Link>
+
               <Link
                 to="/register"
                 className="bg-purple-600 px-4 py-2 rounded-lg text-white font-semibold hover:bg-purple-700"
@@ -59,7 +62,7 @@ export default function Navbar() {
           ) : (
             <button
               onClick={() => {
-                signOut();   // ← CAMBIO AQUÍ
+                signOut();
                 navigate("/");
               }}
               className="flex items-center gap-2 text-red-400 hover:text-red-300"
@@ -79,25 +82,33 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* MOBILE MENU */}
+      {/* =========== MOBILE MENU =========== */}
       {open && (
         <div className="md:hidden bg-slate-900 border-t border-white/10 p-4 flex flex-col gap-4">
-          <Link to="/live" className="text-slate-300 hover:text-white transition">
-            Ver Clips
+
+          <Link
+            to="/live"
+            className="text-slate-300 hover:text-white transition"
+            onClick={() => setOpen(false)}
+          >
+            Ver clips
           </Link>
 
           {user && (
             <>
               <Link
                 to="/clips/upload"
-                className="flex items-center gap-2 text-slate-300 hover:text-white"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 text-slate-300 hover:text-white transition"
               >
                 <Video className="w-4 h-4" />
-                Subir Clip
+                Subir clip
               </Link>
+
               <Link
                 to="/dashboard"
-                className="flex items-center gap-2 text-slate-300 hover:text-white"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 text-slate-300 hover:text-white transition"
               >
                 <Tv className="w-4 h-4" />
                 Dashboard
@@ -107,12 +118,18 @@ export default function Navbar() {
 
           {!user ? (
             <>
-              <Link to="/login" className="text-purple-400 font-semibold">
+              <Link
+                to="/login"
+                onClick={() => setOpen(false)}
+                className="text-purple-400 font-semibold"
+              >
                 Iniciar sesión
               </Link>
+
               <Link
                 to="/register"
-                className="bg-purple-600 px-4 py-2 rounded-lg text-white text-center"
+                onClick={() => setOpen(false)}
+                className="bg-purple-600 px-4 py-2 rounded-lg text-white text-center font-semibold hover:bg-purple-700"
               >
                 Crear cuenta
               </Link>
@@ -120,7 +137,7 @@ export default function Navbar() {
           ) : (
             <button
               onClick={() => {
-                signOut();   // ← CAMBIO AQUÍ
+                signOut();
                 navigate("/");
               }}
               className="flex items-center gap-2 text-red-400 hover:text-red-300"
