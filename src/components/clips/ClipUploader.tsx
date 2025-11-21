@@ -1,3 +1,7 @@
+// ===================================================
+// 🔥 CLIP UPLOADER (TIPADO + EXPORTS) COMPLETO
+// ===================================================
+
 import React, { useRef } from "react";
 
 interface ClipUploaderProps {
