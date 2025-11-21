@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { getAllClips } from "../../services/api/clipService";
-import ClipCard, { ClipType } from "../../components/clips/ClipCard";
+import ClipCard from "../../components/clips/ClipCard";
 import { useNavigate } from "react-router-dom";
+import { ClipType } from "../../components/clips/ClipCard";
 
-export default function LivePage() {
+export default function ClipsPage() {
   const [clips, setClips] = useState<ClipType[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -27,7 +28,11 @@ export default function LivePage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {clips.map((clip) => (
-              <ClipCard key={clip.id} clip={clip} onClick={() => navigate(`/clip/${clip.id}`)} />
+              <ClipCard
+                key={clip.id}
+                clip={clip}
+                onClick={() => navigate(`/clip/${clip.id}`)}
+              />
             ))}
           </div>
         )}

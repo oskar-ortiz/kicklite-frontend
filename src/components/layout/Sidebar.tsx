@@ -1,11 +1,15 @@
+// ======================================
+// 🔥 SIDEBAR COMPLETO MODIFICADO
+// ======================================
+
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+
 import {
   Home,
   Tv,
-  Gamepad2,
-  TrendingUp,
+  Film,
   Radio,
   Users,
   X,
@@ -16,6 +20,8 @@ import {
   type Stream,
 } from "../../services/api/streamService";
 
+import { getAllClips } from "../../services/api/clipService";
+
 interface SidebarProps {
   open: boolean;
   onClose: () => void;
@@ -24,33 +30,38 @@ interface SidebarProps {
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
+
   const [liveStreams, setLiveStreams] = useState<Stream[]>([]);
+  const [clips, setClips] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Cargar datos al abrir
   useEffect(() => {
-    const loadStreams = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
-        const streams = await getLiveStreams();
+
+        const [streams, clipsData] = await Promise.all([
+          getLiveStreams(),
+          getAllClips(),
+        ]);
+
         setLiveStreams(streams || []);
+        setClips(clipsData || []);
       } catch (err) {
-        console.error("❌ Error cargando streams en Sidebar:", err);
-        setLiveStreams([]);
+        console.error("❌ Error cargando Sidebar:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    if (open) {
-      loadStreams();
-    }
+    if (open) loadData();
   }, [open]);
 
   const navItems = [
     { icon: Home, label: "Home", href: "/" },
     { icon: Tv, label: "Live", href: "/live" },
-    { icon: Gamepad2, label: "Categories", href: "/categories" },
-    { icon: TrendingUp, label: "Trending", href: "/trending" },
+    { icon: Film, label: "Clips", href: "/clips" },
   ];
 
   return (
@@ -109,8 +120,10 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             })}
           </nav>
 
-          {/* LIVE CHANNELS */}
-          <div className="px-4 pt-2 pb-3 border-t border-white/10 mt-auto">
+          {/* ======================== */}
+          {/* 🔴 STREAMS EN VIVO */}
+          {/* ======================== */}
+          <div className="px-4 pt-2 pb-3 border-t border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2 text-xs text-slate-400 uppercase tracking-wide">
                 <Radio className="w-3 h-3 text-red-400" />
@@ -121,7 +134,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               )}
             </div>
 
-            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
               {liveStreams.length === 0 && !loading && (
                 <p className="text-xs text-slate-500">
                   No hay streams en vivo en este momento.
@@ -137,7 +150,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                   }}
                   className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-800 text-left"
                 >
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xs text-white">
+                  <div className="w-7 h-7 rounded-full bg-purple-600 flex items-center justify-center text-xs text-white">
                     {stream.user?.username?.charAt(0).toUpperCase() || "S"}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -156,6 +169,46 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                   </div>
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* ======================== */}
+          {/* 🎬 CLIPS RECIENTES */}
+          {/* ======================== */}
+          <div className="px-4 pb-4 border-t border-white/10 mt-3">
+            <div className="flex items-center gap-2 text-xs text-slate-400 uppercase tracking-wide mb-3">
+              <Film className="w-3 h-3 text-purple-400" />
+              <span>Clips recientes</span>
+            </div>
+
+            <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+              {clips.length === 0 ? (
+                <p className="text-[11px] text-slate-500">
+                  Sin clips aún.
+                </p>
+              ) : (
+                clips.slice(0, 8).map((clip) => (
+                  <button
+                    key={clip.id}
+                    onClick={() => {
+                      onClose();
+                      navigate(`/clip/${clip.id}`);
+                    }}
+                    className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-slate-800 text-left"
+                  >
+                    <div className="w-7 h-7 rounded-md bg-slate-700 flex items-center justify-center text-white text-xs">
+                      🎬
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-xs truncate">{clip.title}</p>
+                      <p className="text-[11px] text-slate-400 truncate">
+                        {clip.streamer?.username || "Usuario"}
+                      </p>
+                    </div>
+                  </button>
+                ))
+              )}
             </div>
           </div>
         </motion.aside>

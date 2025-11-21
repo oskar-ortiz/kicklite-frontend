@@ -1,4 +1,6 @@
-// src/components/layout/Navbar.tsx
+// ======================================
+// 🔥 NAVBAR COMPLETO MODIFICADO
+// ======================================
 
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -13,6 +15,7 @@ import {
   Tv,
   Gamepad2,
   TrendingUp,
+  Film,
   Settings,
   LogOut,
   Crown,
@@ -23,18 +26,16 @@ import Avatar from "../common/Avatar";
 import { useAuth } from "../../context/AuthContext";
 import Sidebar from "./Sidebar";
 
-// Streams reales para notificaciones
-import {
-  getLiveStreams,
-  type Stream,
-} from "../../services/api/streamService";
+import { getLiveStreams, type Stream } from "../../services/api/streamService";
+import { getAllClips } from "../../services/api/clipService";
 
 interface NotificationItem {
   id: string;
-  user: string;
   title: string;
-  viewerCount: number;
+  type: "stream" | "clip";
+  user: string;
   avatarUrl?: string;
+  viewerCount?: number;
 }
 
 export default function Navbar() {
@@ -43,50 +44,58 @@ export default function Navbar() {
   const [userMenu, setUserMenu] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
-  const [notificationItems, setNotificationItems] = useState<
-    NotificationItem[]
-  >([]);
+  const [notificationItems, setNotificationItems] = useState<NotificationItem[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, loading, signOut } = useAuth();
 
+  // Detectar scroll
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Cerrar menús cuando cambiamos de ruta
+  // Cerrar menús al cambiar de ruta
   useEffect(() => {
     setUserMenu(false);
     setMobileMenu(false);
     setNotificationsOpen(false);
   }, [location.pathname]);
 
-  // Notificaciones: canales en vivo
+  // Cargar notificaciones → Streams en vivo + Clips nuevos
   useEffect(() => {
     const loadNotifications = async () => {
       try {
         setLoadingNotifications(true);
-        const liveStreams: Stream[] = await getLiveStreams();
 
-        const mapped: NotificationItem[] = (liveStreams || []).map((s) => ({
+        const [streams, clips] = await Promise.all([
+          getLiveStreams(),
+          getAllClips(),
+        ]);
+
+        const streamItems: NotificationItem[] = (streams || []).map((s: Stream) => ({
           id: s.id,
-          user: s.user?.username || "Streamer",
           title: s.title || "En directo",
-          viewerCount: s.viewerCount || 0,
+          type: "stream",
+          user: s.user?.username || "Streamer",
           avatarUrl: s.user?.avatarUrl,
+          viewerCount: s.viewerCount || 0,
         }));
 
-        setNotificationItems(mapped);
+        const clipItems: NotificationItem[] = (clips || []).map((c: any) => ({
+          id: c.id,
+          title: c.title || "Nuevo Clip",
+          type: "clip",
+          user: c.streamer?.username || "Usuario",
+          avatarUrl: c.streamer?.avatarUrl,
+        }));
+
+        setNotificationItems([...streamItems.slice(0, 5), ...clipItems.slice(0, 5)]);
       } catch (err) {
-        console.error(
-          "❌ Error cargando notificaciones (streams en vivo):",
-          err
-        );
-        setNotificationItems([]);
+        console.error("❌ Error cargando notificaciones:", err);
       } finally {
         setLoadingNotifications(false);
       }
@@ -98,31 +107,28 @@ export default function Navbar() {
   const handleLogout = () => {
     signOut();
     setUserMenu(false);
-    navigate("/"); // 🔁 Siempre volvemos al Home
+    navigate("/");
   };
 
   const navItems = [
     { icon: Home, label: "Home", href: "/" },
-    { icon: Tv, label: "Live", href: "/live", badge: "24K" },
+    { icon: Tv, label: "Live", href: "/live" },
+    { icon: Film, label: "Clips", href: "/clips" },
     { icon: Gamepad2, label: "Categories", href: "/categories" },
     { icon: TrendingUp, label: "Trending", href: "/trending" },
   ];
 
-  // Nombre seguro (evita crash en .split)
-  const displayName =
-    user?.username ||
-    (user?.email ? user.email.split("@")[0] : "Usuario");
-
-  const displayHandle =
-    user?.username ||
-    (user?.email ? user.email.split("@")[0] : "user");
+  const displayName = user?.username || (user?.email ? user.email.split("@")[0] : "Usuario");
+  const displayHandle = user?.username || (user?.email ? user.email.split("@")[0] : "user");
 
   const showAuthButtons = !loading && !isAuthenticated;
   const showUserAvatar = !loading && isAuthenticated && !!user;
 
   return (
     <>
+      {/* ================================ */}
       {/* NAVBAR */}
+      {/* ================================ */}
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
@@ -132,8 +138,9 @@ export default function Navbar() {
             : "bg-transparent"
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-16">
+
             {/* LEFT */}
             <div className="flex items-center space-x-4">
               <button
@@ -145,16 +152,14 @@ export default function Navbar() {
 
               <Link to="/" className="flex items-center space-x-2">
                 <Sparkles className="h-6 w-6 text-purple-500" />
-                <span className="text-xl font-bold text-white">
-                  streamora
-                </span>
+                <span className="text-xl font-bold text-white">streamora</span>
                 <span className="px-2 py-0.5 text-[10px] font-bold bg-white/10 text-white/60 rounded border border-white/20">
                   space
                 </span>
               </Link>
             </div>
 
-            {/* MIDDLE LINKS */}
+            {/* MIDDLE */}
             <div className="hidden md:flex items-center space-x-1">
               {navItems.map((item) => (
                 <Link
@@ -164,11 +169,6 @@ export default function Navbar() {
                 >
                   <item.icon className="h-5 w-5" />
                   <span>{item.label}</span>
-                  {item.badge && (
-                    <span className="absolute -top-1 -right-1 bg-purple-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
                 </Link>
               ))}
             </div>
@@ -188,9 +188,7 @@ export default function Navbar() {
               {/* NOTIFICATIONS */}
               <div className="relative">
                 <button
-                  onClick={() =>
-                    setNotificationsOpen((prev) => !prev)
-                  }
+                  onClick={() => setNotificationsOpen((prev) => !prev)}
                   className="p-2 rounded-lg hover:bg-slate-800 text-slate-400"
                 >
                   <Bell className="h-5 w-5" />
@@ -204,53 +202,43 @@ export default function Navbar() {
                       exit={{ opacity: 0, y: 10 }}
                       className="absolute right-0 mt-2 w-80 bg-slate-800 rounded-lg shadow-lg py-2 z-50"
                     >
+                      {/* HEADER */}
                       <div className="px-4 py-2 border-b border-slate-700 flex items-center justify-between">
-                        <h3 className="font-semibold text-white">
-                          Canales en vivo
-                        </h3>
+                        <h3 className="font-semibold text-white">Actividad Reciente</h3>
                         {loadingNotifications && (
-                          <span className="text-xs text-slate-400">
-                            Cargando...
-                          </span>
+                          <span className="text-xs text-slate-400">Cargando...</span>
                         )}
                       </div>
 
-                      {!loadingNotifications &&
-                        notificationItems.length === 0 && (
-                          <div className="px-4 py-4 text-sm text-slate-400">
-                            No hay canales en vivo en este momento.
-                          </div>
-                        )}
+                      {notificationItems.length === 0 && (
+                        <div className="px-4 py-4 text-sm text-slate-400">
+                          Nada nuevo aún.
+                        </div>
+                      )}
 
                       {notificationItems.map((n) => (
                         <button
                           key={n.id}
                           onClick={() => {
+                            navigate(n.type === "stream" ? `/stream/${n.id}` : `/clip/${n.id}`);
                             setNotificationsOpen(false);
-                            navigate(`/stream/${n.id}`);
                           }}
                           className="w-full text-left px-4 py-3 flex items-center space-x-3 hover:bg-slate-700"
                         >
-                          <Avatar
-                            size="sm"
-                            alt={n.user}
-                            src={n.avatarUrl}
-                          />
+                          <Avatar size="sm" alt={n.user} src={n.avatarUrl} />
                           <div className="flex-1">
                             <p className="text-white text-sm">
                               <strong>{n.user}</strong>{" "}
-                              <span className="text-slate-300">
-                                está en vivo
-                              </span>
+                              {n.type === "stream" ? "está en vivo" : "subió un clip"}
                             </p>
-                            <p className="text-xs text-slate-400 truncate">
-                              {n.title}
-                            </p>
+                            <p className="text-xs text-slate-400 truncate">{n.title}</p>
                           </div>
-                          <span className="text-xs text-purple-300 font-semibold">
-                            {n.viewerCount.toLocaleString("es-ES")}{" "}
-                            viewers
-                          </span>
+
+                          {n.type === "stream" && (
+                            <span className="text-xs text-purple-300 font-semibold">
+                              {n.viewerCount} viewers
+                            </span>
+                          )}
                         </button>
                       ))}
                     </motion.div>
@@ -258,11 +246,8 @@ export default function Navbar() {
                 </AnimatePresence>
               </div>
 
-              {/* AUTH / USER */}
-              {loading && (
-                // Skeleton mientras comprobamos el token
-                <div className="w-24 h-8 rounded-lg bg-slate-800 animate-pulse" />
-              )}
+              {/* AUTH */}
+              {loading && <div className="w-24 h-8 rounded-lg bg-slate-800 animate-pulse" />}
 
               {showAuthButtons && (
                 <>
@@ -306,14 +291,9 @@ export default function Navbar() {
                         exit={{ opacity: 0, y: 10 }}
                         className="absolute right-0 mt-2 w-56 bg-slate-800 rounded-lg shadow-lg py-2 z-50"
                       >
-                        {/* HEADER USER */}
                         <div className="px-4 py-3 border-b border-slate-700">
-                          <p className="text-sm font-semibold text-white">
-                            {displayName}
-                          </p>
-                          <p className="text-xs text-slate-400">
-                            @{displayHandle}
-                          </p>
+                          <p className="text-sm font-semibold text-white">{displayName}</p>
+                          <p className="text-xs text-slate-400">@{displayHandle}</p>
                         </div>
 
                         <Link
@@ -351,19 +331,6 @@ export default function Navbar() {
 
       {/* SIDEBAR */}
       <Sidebar open={mobileMenu} onClose={() => setMobileMenu(false)} />
-
-      {/* OVERLAY */}
-      <AnimatePresence>
-        {mobileMenu && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.7 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setMobileMenu(false)}
-            className="fixed inset-0 bg-black/50 z-40"
-          />
-        )}
-      </AnimatePresence>
     </>
   );
 }
