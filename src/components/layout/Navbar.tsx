@@ -20,6 +20,7 @@ import {
 import Avatar from "../common/Avatar";
 import { useAuth } from "../../context/AuthContext";
 import Sidebar from "./Sidebar";
+
 import {
   getLiveStreams,
   type Stream,
@@ -39,8 +40,7 @@ export default function Navbar() {
   const [userMenu, setUserMenu] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
-  const [notificationItems, setNotificationItems] =
-    useState<NotificationItem[]>([]);
+  const [notificationItems, setNotificationItems] = useState<NotificationItem[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
 
   const navigate = useNavigate();
@@ -52,7 +52,7 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // 🔥 Notificaciones reales
+  // 🔥 Cargar streams en vivo para notificaciones
   useEffect(() => {
     const loadNotifications = async () => {
       try {
@@ -93,6 +93,7 @@ export default function Navbar() {
 
   return (
     <>
+      {/* NAVBAR */}
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
@@ -104,6 +105,7 @@ export default function Navbar() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
+            
             {/* LEFT */}
             <div className="flex items-center space-x-4">
               <button
@@ -122,7 +124,7 @@ export default function Navbar() {
               </Link>
             </div>
 
-            {/* CENTER NAV */}
+            {/* MIDDLE LINKS */}
             <div className="hidden md:flex items-center space-x-1">
               {navItems.map((item) => (
                 <Link
@@ -132,6 +134,7 @@ export default function Navbar() {
                 >
                   <item.icon className="h-5 w-5" />
                   <span>{item.label}</span>
+
                   {item.badge && (
                     <span className="absolute -top-1 -right-1 bg-purple-500 text-white text-xs px-1.5 py-0.5 rounded-full">
                       {item.badge}
@@ -143,6 +146,7 @@ export default function Navbar() {
 
             {/* RIGHT */}
             <div className="flex items-center space-x-4">
+
               {/* SEARCH */}
               <div className="hidden sm:block relative">
                 <input
@@ -162,7 +166,6 @@ export default function Navbar() {
                   <Bell className="h-5 w-5" />
                 </button>
 
-                {/* NOTIFICATION DROPDOWN */}
                 <AnimatePresence>
                   {notificationsOpen && (
                     <motion.div
@@ -175,12 +178,17 @@ export default function Navbar() {
                         <h3 className="font-semibold text-white">
                           Canales en vivo
                         </h3>
+                        {loadingNotifications && (
+                          <span className="text-xs text-slate-400">
+                            Cargando...
+                          </span>
+                        )}
                       </div>
 
-                      {notificationItems.length === 0 && (
-                        <p className="px-4 py-3 text-slate-400 text-sm">
+                      {!loadingNotifications && notificationItems.length === 0 && (
+                        <div className="px-4 py-4 text-sm text-slate-400">
                           No hay canales en vivo.
-                        </p>
+                        </div>
                       )}
 
                       {notificationItems.map((n) => (
@@ -196,12 +204,15 @@ export default function Navbar() {
                           <div className="flex-1">
                             <p className="text-white text-sm">
                               <strong>{n.user}</strong>{" "}
-                              <span className="text-slate-300">está en vivo</span>
+                              <span className="text-slate-300">
+                                está en vivo
+                              </span>
                             </p>
                             <p className="text-xs text-slate-400 truncate">
                               {n.title}
                             </p>
                           </div>
+
                           <span className="text-xs text-purple-300 font-semibold">
                             {n.viewerCount.toLocaleString("es-ES")} viewers
                           </span>
@@ -212,7 +223,7 @@ export default function Navbar() {
                 </AnimatePresence>
               </div>
 
-              {/* AUTH ZONE */}
+              {/* AUTH / USER MENU */}
               {!isAuthenticated ? (
                 <>
                   <Link
@@ -221,6 +232,7 @@ export default function Navbar() {
                   >
                     Iniciar Sesión
                   </Link>
+
                   <Link
                     to="/register"
                     className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg"
@@ -253,15 +265,21 @@ export default function Navbar() {
                         exit={{ opacity: 0, y: 10 }}
                         className="absolute right-0 mt-2 w-48 bg-slate-800 rounded-lg shadow-lg py-2 z-50"
                       >
+                        {/* USER INFO */}
                         <div className="px-4 py-3 border-b border-slate-700">
                           <p className="text-sm font-semibold text-white">
-                            {user?.username}
+                            {user?.username || "Usuario"}
                           </p>
+
                           <p className="text-xs text-slate-400">
-                            @{user?.email.split("@")[0]}
+                            @{user?.username ||
+                              (user?.email
+                                ? user.email.split("@")[0]
+                                : "Usuario")}
                           </p>
                         </div>
 
+                        {/* DASHBOARD */}
                         <Link
                           to="/dashboard"
                           className="block px-4 py-2 text-sm text-white hover:bg-slate-700"
@@ -270,6 +288,7 @@ export default function Navbar() {
                           Dashboard
                         </Link>
 
+                        {/* SETTINGS */}
                         <Link
                           to="/settings"
                           className="block px-4 py-2 text-sm text-white hover:bg-slate-700"
@@ -278,6 +297,7 @@ export default function Navbar() {
                           Configuración
                         </Link>
 
+                        {/* LOGOUT */}
                         <button
                           onClick={handleLogout}
                           className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-slate-700"
@@ -295,7 +315,7 @@ export default function Navbar() {
         </div>
       </motion.nav>
 
-      {/* SIDEBAR MOBILE */}
+      {/* SIDEBAR */}
       <Sidebar open={mobileMenu} onClose={() => setMobileMenu(false)} />
 
       {/* OVERLAY */}
