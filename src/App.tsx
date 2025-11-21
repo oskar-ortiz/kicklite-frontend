@@ -1,28 +1,25 @@
+// src/App.tsx
 import { Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/layout/Navbar";
 
 // Páginas principales
 import Home from "./pages/Home/Home";
-import StreamPage from "./pages/Stream/Stream"; // soporta stream + clip
+import StreamPage from "./pages/Stream/Stream";
+
+// Listado general de contenido (Live = Clips en tu versión)
 import LivePage from "./pages/Live/Live";
 
 // Clips
-import ClipsPage from "./pages/Clips/ClipsPage.tsx";
-import ClipPage from "./pages/Clips/ClipPage.tsx";
-import UploadClip from "./pages/Clips/UploadClip.tsx";  // 👈 NUEVA RUTA
-
-// Categorías (si deseas dejarlo aunque no tenga vida)
-import Categories from "./pages/Categories/Categories";
+import ClipsPage from "./pages/Clips/ClipsPage";
+import ClipPage from "./pages/Clips/ClipPage";
+import UploadClip from "./pages/Clips/UploadClip";
 
 // Dashboard
 import Dashboard from "./pages/Dashboard/Dashboard";
 import LiveDashboard from "./pages/Dashboard/LiveDashboard";
 
-// Trending (opcional)
-import TrendingPage from "./pages/Trending/Trending";
-
-// Autenticación
+// Auth
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
@@ -34,32 +31,29 @@ export default function App() {
       {/* NAVBAR GLOBAL */}
       <Navbar />
 
-      {/* RUTAS */}
       <Routes>
         {/* HOME */}
         <Route path="/" element={<Home />} />
 
-        {/* STREAM O CLIP (STREAMPAGE SOPORTA AMBOS) */}
+        {/* STREAM EN VIVO */}
         <Route path="/stream/:id" element={<StreamPage />} />
-        <Route path="/clip/:id" element={<StreamPage />} />
-
-        {/* LISTADO DE STREAMS (LIVE) */}
-        <Route path="/live" element={<LivePage />} />
 
         {/* CLIPS */}
         <Route path="/clips" element={<ClipsPage />} />
         <Route path="/clip/:id" element={<ClipPage />} />
 
-        {/* 🔥 SUBIR CLIP */}
-        <Route path="/clips/upload" element={<UploadClip />} />  {/* ⬅ ESTA ES LA RUTA QUE PEDISTE */}
+        {/* SUBIR CLIP */}
+        <Route path="/clips/upload" element={<UploadClip />} />
 
-        {/* CATEGORIES / TRENDING (SIN VIDA SI QUIERES) */}
-        <Route path="/categories" element={<Categories />} />
-        <Route path="/trending" element={<TrendingPage />} />
+        {/* LISTADO DE CONTENIDO (ANTES LIVE STREAMS) */}
+        <Route path="/live" element={<LivePage />} />
 
         {/* DASHBOARD */}
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/dashboard/live/:streamId" element={<LiveDashboard />} />
+        <Route
+          path="/dashboard/live/:streamId"
+          element={<LiveDashboard />}
+        />
 
         {/* AUTH */}
         <Route path="/login" element={<Login />} />
