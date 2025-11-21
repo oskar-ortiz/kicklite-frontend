@@ -20,6 +20,9 @@ import Register from "./pages/Auth/Register";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
 import ResetPassword from "./pages/Auth/ResetPassword";
 
+// 🔥 NUEVA RUTA QUE TE FALTABA
+import LiveDashboard from "./pages/Dashboard/LiveDashboard";
+
 export default function App() {
   return (
     <div className="min-h-screen bg-slate-950">
@@ -39,6 +42,9 @@ export default function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/live" element={<LivePage />} />
         <Route path="/trending" element={<TrendingPage />} />
+
+        {/* 🔥 DASHBOARD DE STREAMING (NUEVO) */}
+        <Route path="/dashboard/live/:streamId" element={<LiveDashboard />} />
 
         {/* 🔥 LOGIN & REGISTER */}
         <Route path="/login" element={<Login />} />
