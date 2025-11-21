@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { api } from '../services/api/api.config';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { api } from "../services/api/api.config";
 
 interface User {
   id: string;
@@ -16,16 +16,20 @@ interface AuthContextData {
   signOut: () => void;
 }
 
-export const AuthContext = createContext<AuthContextData>({} as AuthContextData);
+export const AuthContext = createContext<AuthContextData>(
+  {} as AuthContextData
+);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Cargar usuario si hay token
+  // Cargar usuario si existe token
   useEffect(() => {
     const loadUser = async () => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
 
       if (!token) {
         setLoading(false);
@@ -33,10 +37,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       try {
-        const response = await api.get('/api/auth/me');
-        setUser(response.data.user || response.data);
-      } catch {
-        localStorage.removeItem('token');
+        const response = await api.get("/api/auth/me");
+
+        // Para compatibilidad si backend envía { user: {...} }
+        const data = response.data.user || response.data;
+
+        setUser(data);
+      } catch (error) {
+        console.error("❌ Error cargando usuario:", error);
+        localStorage.removeItem("token");
         setUser(null);
       } finally {
         setLoading(false);
@@ -48,20 +57,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
-      const res = await api.post('/api/auth/login', { email, password });
-      const { token, user } = res.data;
+      const res = await api.post("/api/auth/login", { email, password });
 
-      localStorage.setItem('token', token);
-      setUser(user);
+      const token = res.data.token;
+      const userData = res.data.user || res.data;
+
+      localStorage.setItem("token", token);
+      setUser(userData);
     } catch (error) {
-      localStorage.removeItem('token');
+      localStorage.removeItem("token");
       setUser(null);
       throw error;
     }
   };
 
   const signOut = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem("token");
     setUser(null);
   };
 

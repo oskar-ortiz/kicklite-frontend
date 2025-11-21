@@ -20,8 +20,6 @@ import {
 import Avatar from "../common/Avatar";
 import { useAuth } from "../../context/AuthContext";
 import Sidebar from "./Sidebar";
-
-// 🔥 Importamos streams reales
 import {
   getLiveStreams,
   type Stream,
@@ -41,7 +39,8 @@ export default function Navbar() {
   const [userMenu, setUserMenu] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
-  const [notificationItems, setNotificationItems] = useState<NotificationItem[]>([]);
+  const [notificationItems, setNotificationItems] =
+    useState<NotificationItem[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
 
   const navigate = useNavigate();
@@ -53,7 +52,7 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // 🔥 Cargar notificaciones reales desde el backend (streams en vivo)
+  // 🔥 Notificaciones reales
   useEffect(() => {
     const loadNotifications = async () => {
       try {
@@ -70,7 +69,7 @@ export default function Navbar() {
 
         setNotificationItems(mapped);
       } catch (err) {
-        console.error("❌ Error cargando notificaciones (streams en vivo):", err);
+        console.error("❌ Error cargando notificaciones:", err);
         setNotificationItems([]);
       } finally {
         setLoadingNotifications(false);
@@ -94,7 +93,6 @@ export default function Navbar() {
 
   return (
     <>
-      {/* NAVBAR */}
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
@@ -124,7 +122,7 @@ export default function Navbar() {
               </Link>
             </div>
 
-            {/* MIDDLE LINKS */}
+            {/* CENTER NAV */}
             <div className="hidden md:flex items-center space-x-1">
               {navItems.map((item) => (
                 <Link
@@ -164,6 +162,7 @@ export default function Navbar() {
                   <Bell className="h-5 w-5" />
                 </button>
 
+                {/* NOTIFICATION DROPDOWN */}
                 <AnimatePresence>
                   {notificationsOpen && (
                     <motion.div
@@ -176,17 +175,12 @@ export default function Navbar() {
                         <h3 className="font-semibold text-white">
                           Canales en vivo
                         </h3>
-                        {loadingNotifications && (
-                          <span className="text-xs text-slate-400">
-                            Cargando...
-                          </span>
-                        )}
                       </div>
 
-                      {!loadingNotifications && notificationItems.length === 0 && (
-                        <div className="px-4 py-4 text-sm text-slate-400">
-                          No hay canales en vivo en este momento.
-                        </div>
+                      {notificationItems.length === 0 && (
+                        <p className="px-4 py-3 text-slate-400 text-sm">
+                          No hay canales en vivo.
+                        </p>
                       )}
 
                       {notificationItems.map((n) => (
@@ -198,17 +192,11 @@ export default function Navbar() {
                           }}
                           className="w-full text-left px-4 py-3 flex items-center space-x-3 hover:bg-slate-700"
                         >
-                          <Avatar
-                            size="sm"
-                            alt={n.user}
-                            src={n.avatarUrl}
-                          />
+                          <Avatar size="sm" alt={n.user} src={n.avatarUrl} />
                           <div className="flex-1">
                             <p className="text-white text-sm">
                               <strong>{n.user}</strong>{" "}
-                              <span className="text-slate-300">
-                                está en vivo
-                              </span>
+                              <span className="text-slate-300">está en vivo</span>
                             </p>
                             <p className="text-xs text-slate-400 truncate">
                               {n.title}
@@ -224,7 +212,7 @@ export default function Navbar() {
                 </AnimatePresence>
               </div>
 
-              {/* AUTH OR USER MENU */}
+              {/* AUTH ZONE */}
               {!isAuthenticated ? (
                 <>
                   <Link
@@ -270,7 +258,7 @@ export default function Navbar() {
                             {user?.username}
                           </p>
                           <p className="text-xs text-slate-400">
-                            @{user?.email?.split("@")[0]}
+                            @{user?.email.split("@")[0]}
                           </p>
                         </div>
 
@@ -307,7 +295,7 @@ export default function Navbar() {
         </div>
       </motion.nav>
 
-      {/* SIDEBAR */}
+      {/* SIDEBAR MOBILE */}
       <Sidebar open={mobileMenu} onClose={() => setMobileMenu(false)} />
 
       {/* OVERLAY */}
